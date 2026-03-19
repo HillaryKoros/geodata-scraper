@@ -1,0 +1,789 @@
+[
+  {
+    "id": "gadm-v4.1",
+    "name": "GADM v4.1",
+    "description": "Global Administrative Areas — admin boundary polygons for all countries, levels 0-5",
+    "source_type": "gadm",
+    "protocol": "https",
+    "version": "4.1",
+    "base_url": "https://geodata.ucdavis.edu/gadm/gadm4.1/",
+    "urls": {
+      "gpkg": "https://geodata.ucdavis.edu/gadm/gadm4.1/gpkg/gadm41_{iso3}.gpkg",
+      "shp": "https://geodata.ucdavis.edu/gadm/gadm4.1/shp/gadm41_{iso3}_shp.zip",
+      "geojson": "https://geodata.ucdavis.edu/gadm/gadm4.1/json/gadm41_{iso3}_{level}.json"
+    },
+    "formats": ["gpkg", "shp", "geojson"],
+    "default_format": "gpkg",
+    "license": "CC-BY-4.0",
+    "attribution": "GADM - https://gadm.org",
+    "crs": "EPSG:4326",
+    "geometry_type": "MultiPolygon",
+    "update_frequency": "yearly",
+    "last_updated": "2024-01-01",
+    "regions": {
+      "igad": ["DJI", "ERI", "ETH", "KEN", "SOM", "SSD", "SDN", "UGA"],
+      "igad_plus": ["DJI", "ERI", "ETH", "KEN", "SOM", "SSD", "SDN", "UGA", "BDI", "RWA", "TZA"],
+      "eac": ["BDI", "COD", "KEN", "RWA", "SSD", "TZA", "UGA"]
+    },
+    "countries": {
+      "DJI": {"name": "Djibouti",    "admin_levels": 3, "approx_size_mb": 0.5},
+      "ERI": {"name": "Eritrea",     "admin_levels": 3, "approx_size_mb": 2.0},
+      "ETH": {"name": "Ethiopia",    "admin_levels": 4, "approx_size_mb": 18.0},
+      "KEN": {"name": "Kenya",       "admin_levels": 4, "approx_size_mb": 46.0},
+      "SOM": {"name": "Somalia",     "admin_levels": 3, "approx_size_mb": 5.0},
+      "SSD": {"name": "South Sudan", "admin_levels": 3, "approx_size_mb": 0.8},
+      "SDN": {"name": "Sudan",       "admin_levels": 3, "approx_size_mb": 3.8},
+      "UGA": {"name": "Uganda",      "admin_levels": 4, "approx_size_mb": 20.0},
+      "BDI": {"name": "Burundi",     "admin_levels": 4, "approx_size_mb": 11.0},
+      "RWA": {"name": "Rwanda",      "admin_levels": 4, "approx_size_mb": 80.0},
+      "TZA": {"name": "Tanzania",    "admin_levels": 4, "approx_size_mb": 30.0}
+    },
+    "layers": {
+      "admin0": {
+        "name": "Country Boundaries",
+        "geometry_type": "MultiPolygon",
+        "db_table_pattern": "{iso3_lower}_admin0",
+        "parquet_file": "igad_admin0.parquet",
+        "properties": {
+          "GID_0":    {"type": "string", "max_length": 3,   "description": "ISO3 country code",       "example": "KEN", "index": true, "nullable": false},
+          "COUNTRY":  {"type": "string", "max_length": 100, "description": "Country name",             "example": "Kenya", "nullable": false}
+        }
+      },
+      "admin1": {
+        "name": "Provinces / States / Counties",
+        "geometry_type": "MultiPolygon",
+        "db_table_pattern": "{iso3_lower}_admin1",
+        "parquet_file": "igad_admin1.parquet",
+        "properties": {
+          "GID_0":     {"type": "string",  "max_length": 3,   "description": "ISO3 country code",              "example": "KEN",     "index": true,  "nullable": false},
+          "GID_1":     {"type": "string",  "max_length": 20,  "description": "Admin1 GID (country.region)",    "example": "KEN.1_1", "index": true,  "nullable": false},
+          "COUNTRY":   {"type": "string",  "max_length": 100, "description": "Country name",                    "example": "Kenya",   "nullable": false},
+          "NAME_1":    {"type": "string",  "max_length": 200, "description": "Admin1 name",                     "example": "Nairobi", "index": true,  "nullable": false},
+          "VARNAME_1": {"type": "string",  "max_length": 500, "description": "Alternate names (pipe-separated)","example": "Nairob",  "nullable": true},
+          "NL_NAME_1": {"type": "string",  "max_length": 200, "description": "Name in national language",       "example": null,      "nullable": true},
+          "TYPE_1":    {"type": "string",  "max_length": 100, "description": "Admin type in local language",     "example": "County",  "nullable": true},
+          "ENGTYPE_1": {"type": "string",  "max_length": 100, "description": "Admin type in English",            "example": "County",  "nullable": true},
+          "CC_1":      {"type": "string",  "max_length": 20,  "description": "Statistical code",                 "example": null,      "nullable": true},
+          "HASC_1":    {"type": "string",  "max_length": 20,  "description": "HASC code",                        "example": "KE.NA",   "nullable": true},
+          "ISO_1":     {"type": "string",  "max_length": 10,  "description": "ISO 3166-2 code",                  "example": "KE-30",   "nullable": true}
+        }
+      },
+      "admin2": {
+        "name": "Districts / Sub-counties",
+        "geometry_type": "MultiPolygon",
+        "db_table_pattern": "{iso3_lower}_admin2",
+        "parquet_file": "igad_admin2.parquet",
+        "properties": {
+          "GID_0":     {"type": "string",  "max_length": 3,   "description": "ISO3 country code",              "example": "KEN",         "index": true,  "nullable": false},
+          "GID_1":     {"type": "string",  "max_length": 20,  "description": "Admin1 GID",                      "example": "KEN.1_1",     "index": true,  "nullable": false},
+          "GID_2":     {"type": "string",  "max_length": 30,  "description": "Admin2 GID",                      "example": "KEN.1.1_1",   "index": true,  "nullable": false},
+          "COUNTRY":   {"type": "string",  "max_length": 100, "description": "Country name",                    "example": "Kenya",       "nullable": false},
+          "NAME_1":    {"type": "string",  "max_length": 200, "description": "Admin1 name",                     "example": "Nairobi",     "index": true,  "nullable": false},
+          "NAME_2":    {"type": "string",  "max_length": 200, "description": "Admin2 name",                     "example": "Westlands",   "index": true,  "nullable": false},
+          "VARNAME_2": {"type": "string",  "max_length": 500, "description": "Alternate names",                  "example": null,          "nullable": true},
+          "NL_NAME_2": {"type": "string",  "max_length": 200, "description": "Name in national language",       "example": null,          "nullable": true},
+          "TYPE_2":    {"type": "string",  "max_length": 100, "description": "Admin type in local language",     "example": "Sub-county",  "nullable": true},
+          "ENGTYPE_2": {"type": "string",  "max_length": 100, "description": "Admin type in English",            "example": "Sub-county",  "nullable": true},
+          "CC_2":      {"type": "string",  "max_length": 20,  "description": "Statistical code",                 "example": null,          "nullable": true},
+          "HASC_2":    {"type": "string",  "max_length": 20,  "description": "HASC code",                        "example": "KE.NA.WE",    "nullable": true}
+        }
+      },
+      "admin3": {
+        "name": "Wards / Communes",
+        "geometry_type": "MultiPolygon",
+        "db_table_pattern": "{iso3_lower}_admin3",
+        "parquet_file": "igad_admin3.parquet",
+        "properties": {
+          "GID_0":     {"type": "string",  "max_length": 3,   "description": "ISO3 country code",    "index": true,  "nullable": false},
+          "GID_1":     {"type": "string",  "max_length": 20,  "description": "Admin1 GID",            "index": true,  "nullable": false},
+          "GID_2":     {"type": "string",  "max_length": 30,  "description": "Admin2 GID",            "index": true,  "nullable": false},
+          "GID_3":     {"type": "string",  "max_length": 40,  "description": "Admin3 GID",            "index": true,  "nullable": false},
+          "COUNTRY":   {"type": "string",  "max_length": 100, "description": "Country name",          "nullable": false},
+          "NAME_1":    {"type": "string",  "max_length": 200, "description": "Admin1 name",           "nullable": false},
+          "NAME_2":    {"type": "string",  "max_length": 200, "description": "Admin2 name",           "nullable": false},
+          "NAME_3":    {"type": "string",  "max_length": 200, "description": "Admin3 name",           "index": true,  "nullable": false},
+          "VARNAME_3": {"type": "string",  "max_length": 500, "description": "Alternate names",        "nullable": true},
+          "NL_NAME_3": {"type": "string",  "max_length": 200, "description": "National language name", "nullable": true},
+          "TYPE_3":    {"type": "string",  "max_length": 100, "description": "Admin type local",       "nullable": true},
+          "ENGTYPE_3": {"type": "string",  "max_length": 100, "description": "Admin type English",     "nullable": true},
+          "CC_3":      {"type": "string",  "max_length": 20,  "description": "Statistical code",       "nullable": true}
+        }
+      },
+      "admin4": {
+        "name": "Sub-wards / Villages",
+        "geometry_type": "MultiPolygon",
+        "db_table_pattern": "{iso3_lower}_admin4",
+        "parquet_file": "igad_admin4.parquet",
+        "properties": {
+          "GID_0":     {"type": "string",  "max_length": 3,   "description": "ISO3 country code",    "index": true,  "nullable": false},
+          "GID_1":     {"type": "string",  "max_length": 20,  "description": "Admin1 GID",            "index": true,  "nullable": false},
+          "GID_2":     {"type": "string",  "max_length": 30,  "description": "Admin2 GID",            "index": true,  "nullable": false},
+          "GID_3":     {"type": "string",  "max_length": 40,  "description": "Admin3 GID",            "index": true,  "nullable": false},
+          "GID_4":     {"type": "string",  "max_length": 50,  "description": "Admin4 GID",            "index": true,  "nullable": false},
+          "COUNTRY":   {"type": "string",  "max_length": 100, "description": "Country name",          "nullable": false},
+          "NAME_1":    {"type": "string",  "max_length": 200, "description": "Admin1 name",           "nullable": false},
+          "NAME_2":    {"type": "string",  "max_length": 200, "description": "Admin2 name",           "nullable": false},
+          "NAME_3":    {"type": "string",  "max_length": 200, "description": "Admin3 name",           "nullable": false},
+          "NAME_4":    {"type": "string",  "max_length": 200, "description": "Admin4 name",           "index": true,  "nullable": false},
+          "VARNAME_4": {"type": "string",  "max_length": 500, "description": "Alternate names",        "nullable": true},
+          "TYPE_4":    {"type": "string",  "max_length": 100, "description": "Admin type local",       "nullable": true},
+          "ENGTYPE_4": {"type": "string",  "max_length": 100, "description": "Admin type English",     "nullable": true},
+          "CC_4":      {"type": "string",  "max_length": 20,  "description": "Statistical code",       "nullable": true}
+        }
+      }
+    },
+    "storage": {
+      "db_schema": "geodata_raw",
+      "db_table_pattern": "{iso3_lower}_admin{level}",
+      "parquet_path": "gadm/{region}/admin{level}/",
+      "parquet_merged_pattern": "{region}_admin{level}.parquet",
+      "object_storage_prefix": "s3://geodata/gadm/v4.1/"
+    },
+    "tags": ["boundaries", "administrative", "global", "vector"]
+  },
+  {
+    "id": "natural-earth-v5",
+    "name": "Natural Earth v5",
+    "description": "Free vector and raster map data at 1:10m, 1:50m, and 1:110m scales",
+    "source_type": "generic",
+    "protocol": "https",
+    "version": "5.1.2",
+    "base_url": "https://naciscdn.org/naturalearth/",
+    "urls": {
+      "admin0_10m": "https://naciscdn.org/naturalearth/10m/cultural/ne_10m_admin_0_countries.zip",
+      "admin0_50m": "https://naciscdn.org/naturalearth/50m/cultural/ne_50m_admin_0_countries.zip",
+      "admin1_10m": "https://naciscdn.org/naturalearth/10m/cultural/ne_10m_admin_1_states_provinces.zip",
+      "coastline_10m": "https://naciscdn.org/naturalearth/10m/physical/ne_10m_coastline.zip",
+      "rivers_10m": "https://naciscdn.org/naturalearth/10m/physical/ne_10m_rivers_lake_centerlines.zip",
+      "lakes_10m": "https://naciscdn.org/naturalearth/10m/physical/ne_10m_lakes.zip",
+      "ocean_10m": "https://naciscdn.org/naturalearth/10m/physical/ne_10m_ocean.zip"
+    },
+    "formats": ["shp"],
+    "default_format": "shp",
+    "license": "Public Domain",
+    "attribution": "Natural Earth - https://www.naturalearthdata.com",
+    "crs": "EPSG:4326",
+    "update_frequency": "yearly",
+    "last_updated": "2024-06-01",
+    "layers": {
+      "admin0_10m": {
+        "name": "Country Boundaries (1:10m)",
+        "geometry_type": "MultiPolygon",
+        "db_table": "ne_admin0_10m",
+        "parquet_file": "ne_admin0_10m.parquet",
+        "properties": {
+          "ADM0_A3":    {"type": "string", "max_length": 3,   "description": "ISO A3 code",           "index": true,  "nullable": false},
+          "NAME":       {"type": "string", "max_length": 100, "description": "Country name",           "index": true,  "nullable": false},
+          "NAME_LONG":  {"type": "string", "max_length": 200, "description": "Long country name",      "nullable": false},
+          "ABBREV":     {"type": "string", "max_length": 20,  "description": "Abbreviation",           "nullable": true},
+          "FORMAL_EN":  {"type": "string", "max_length": 200, "description": "Formal English name",    "nullable": true},
+          "POP_EST":    {"type": "float",  "description": "Estimated population",                       "nullable": true},
+          "GDP_MD":     {"type": "float",  "description": "GDP (million dollars)",                      "nullable": true},
+          "ECONOMY":    {"type": "string", "max_length": 100, "description": "Economy classification",  "nullable": true},
+          "INCOME_GRP": {"type": "string", "max_length": 100, "description": "Income group",            "nullable": true},
+          "CONTINENT":  {"type": "string", "max_length": 50,  "description": "Continent",               "index": true,  "nullable": false},
+          "REGION_UN":  {"type": "string", "max_length": 50,  "description": "UN region",               "index": true,  "nullable": false},
+          "SUBREGION":  {"type": "string", "max_length": 50,  "description": "Sub-region",              "index": true,  "nullable": false},
+          "REGION_WB":  {"type": "string", "max_length": 50,  "description": "World Bank region",       "nullable": true},
+          "MAPCOLOR7":  {"type": "integer", "description": "Map color scheme (7 colors)",               "nullable": true},
+          "MAPCOLOR13": {"type": "integer", "description": "Map color scheme (13 colors)",              "nullable": true}
+        }
+      },
+      "admin1_10m": {
+        "name": "States / Provinces (1:10m)",
+        "geometry_type": "MultiPolygon",
+        "db_table": "ne_admin1_10m",
+        "parquet_file": "ne_admin1_10m.parquet",
+        "properties": {
+          "adm0_a3":    {"type": "string", "max_length": 3,   "description": "ISO A3 country code",  "index": true,  "nullable": false},
+          "name":       {"type": "string", "max_length": 200, "description": "Province/state name",   "index": true,  "nullable": false},
+          "name_alt":   {"type": "string", "max_length": 500, "description": "Alternate names",        "nullable": true},
+          "name_local": {"type": "string", "max_length": 200, "description": "Local name",             "nullable": true},
+          "type":       {"type": "string", "max_length": 100, "description": "Admin type local",       "nullable": true},
+          "type_en":    {"type": "string", "max_length": 100, "description": "Admin type English",     "nullable": true},
+          "region":     {"type": "string", "max_length": 100, "description": "Region name",            "nullable": true},
+          "iso_a2":     {"type": "string", "max_length": 5,   "description": "ISO 3166-2 code",       "index": true,  "nullable": true},
+          "iso_3166_2": {"type": "string", "max_length": 10,  "description": "Full ISO 3166-2 code",  "nullable": true}
+        }
+      },
+      "coastline_10m": {
+        "name": "Coastline (1:10m)",
+        "geometry_type": "MultiLineString",
+        "db_table": "ne_coastline_10m",
+        "parquet_file": "ne_coastline_10m.parquet",
+        "properties": {
+          "scalerank":  {"type": "integer", "description": "Scale rank 0-12",   "nullable": false},
+          "featurecla": {"type": "string", "max_length": 50, "description": "Feature class", "nullable": false}
+        }
+      },
+      "rivers_10m": {
+        "name": "Rivers and Lake Centerlines (1:10m)",
+        "geometry_type": "MultiLineString",
+        "db_table": "ne_rivers_10m",
+        "parquet_file": "ne_rivers_10m.parquet",
+        "properties": {
+          "name":       {"type": "string", "max_length": 200, "description": "River name",     "index": true,  "nullable": true},
+          "name_alt":   {"type": "string", "max_length": 500, "description": "Alternate names", "nullable": true},
+          "scalerank":  {"type": "integer", "description": "Scale rank",                         "nullable": false},
+          "featurecla": {"type": "string", "max_length": 50,  "description": "Feature class",   "nullable": false},
+          "strokeweig": {"type": "float",  "description": "Stroke weight for rendering",        "nullable": true}
+        }
+      },
+      "lakes_10m": {
+        "name": "Lakes (1:10m)",
+        "geometry_type": "MultiPolygon",
+        "db_table": "ne_lakes_10m",
+        "parquet_file": "ne_lakes_10m.parquet",
+        "properties": {
+          "name":       {"type": "string", "max_length": 200, "description": "Lake name",      "index": true,  "nullable": true},
+          "name_alt":   {"type": "string", "max_length": 500, "description": "Alternate names", "nullable": true},
+          "scalerank":  {"type": "integer", "description": "Scale rank",                         "nullable": false},
+          "featurecla": {"type": "string", "max_length": 50,  "description": "Feature class",   "nullable": false}
+        }
+      }
+    },
+    "storage": {
+      "db_schema": "geodata_raw",
+      "parquet_path": "natural_earth/v5/",
+      "object_storage_prefix": "s3://geodata/natural_earth/v5/"
+    },
+    "tags": ["boundaries", "physical", "basemap", "global", "vector"]
+  },
+  {
+    "id": "geofabrik-osm",
+    "name": "Geofabrik OpenStreetMap Extracts",
+    "description": "Regional OSM extracts — roads, buildings, POIs, land use, water, railways",
+    "source_type": "geofabrik",
+    "protocol": "https",
+    "version": "daily",
+    "base_url": "https://download.geofabrik.de/",
+    "urls": {
+      "djibouti": "https://download.geofabrik.de/africa/djibouti-latest-free.shp.zip",
+      "eritrea": "https://download.geofabrik.de/africa/eritrea-latest-free.shp.zip",
+      "ethiopia": "https://download.geofabrik.de/africa/ethiopia-latest-free.shp.zip",
+      "kenya": "https://download.geofabrik.de/africa/kenya-latest-free.shp.zip",
+      "somalia": "https://download.geofabrik.de/africa/somalia-latest-free.shp.zip",
+      "south_sudan": "https://download.geofabrik.de/africa/south-sudan-latest-free.shp.zip",
+      "sudan": "https://download.geofabrik.de/africa/sudan-latest-free.shp.zip",
+      "uganda": "https://download.geofabrik.de/africa/uganda-latest-free.shp.zip",
+      "burundi": "https://download.geofabrik.de/africa/burundi-latest-free.shp.zip",
+      "rwanda": "https://download.geofabrik.de/africa/rwanda-latest-free.shp.zip",
+      "tanzania": "https://download.geofabrik.de/africa/tanzania-latest-free.shp.zip"
+    },
+    "formats": ["shp", "pbf"],
+    "default_format": "shp",
+    "license": "ODbL",
+    "attribution": "OpenStreetMap contributors via Geofabrik",
+    "crs": "EPSG:4326",
+    "update_frequency": "daily",
+    "layers": {
+      "buildings": {
+        "name": "Buildings",
+        "file_pattern": "gis_osm_buildings_a_free_1",
+        "geometry_type": "MultiPolygon",
+        "db_table_pattern": "{country}_osm_buildings",
+        "parquet_file_pattern": "{country}_osm_buildings.parquet",
+        "properties": {
+          "osm_id":   {"type": "string",  "max_length": 20,  "description": "OSM object ID",     "index": true,  "nullable": false},
+          "code":     {"type": "integer", "description": "OSM feature code",                       "nullable": true},
+          "fclass":   {"type": "string",  "max_length": 50,  "description": "Feature class",       "index": true,  "nullable": true},
+          "name":     {"type": "string",  "max_length": 200, "description": "Building name",       "index": true,  "nullable": true},
+          "type":     {"type": "string",  "max_length": 50,  "description": "Building type",       "nullable": true}
+        }
+      },
+      "roads": {
+        "name": "Roads",
+        "file_pattern": "gis_osm_roads_free_1",
+        "geometry_type": "MultiLineString",
+        "db_table_pattern": "{country}_osm_roads",
+        "parquet_file_pattern": "{country}_osm_roads.parquet",
+        "properties": {
+          "osm_id":   {"type": "string",  "max_length": 20,  "description": "OSM object ID",      "index": true,  "nullable": false},
+          "code":     {"type": "integer", "description": "OSM feature code",                        "nullable": true},
+          "fclass":   {"type": "string",  "max_length": 50,  "description": "Road class",          "index": true,  "nullable": true},
+          "name":     {"type": "string",  "max_length": 200, "description": "Road name",            "index": true,  "nullable": true},
+          "ref":      {"type": "string",  "max_length": 50,  "description": "Reference number",     "nullable": true},
+          "oneway":   {"type": "string",  "max_length": 5,   "description": "One-way (B/F/T)",      "nullable": true},
+          "maxspeed": {"type": "integer", "description": "Max speed (km/h)",                         "nullable": true},
+          "layer":    {"type": "integer", "description": "Vertical layer (bridges/tunnels)",          "nullable": true},
+          "bridge":   {"type": "string",  "max_length": 5,   "description": "Is bridge (T/F)",      "nullable": true},
+          "tunnel":   {"type": "string",  "max_length": 5,   "description": "Is tunnel (T/F)",      "nullable": true}
+        }
+      },
+      "places": {
+        "name": "Places",
+        "file_pattern": "gis_osm_places_free_1",
+        "geometry_type": "Point",
+        "db_table_pattern": "{country}_osm_places",
+        "parquet_file_pattern": "{country}_osm_places.parquet",
+        "properties": {
+          "osm_id":     {"type": "string",  "max_length": 20,  "description": "OSM object ID",   "index": true,  "nullable": false},
+          "code":       {"type": "integer", "description": "OSM feature code",                     "nullable": true},
+          "fclass":     {"type": "string",  "max_length": 50,  "description": "Place class",      "index": true,  "nullable": true},
+          "name":       {"type": "string",  "max_length": 200, "description": "Place name",        "index": true,  "nullable": true},
+          "population": {"type": "integer", "description": "Population",                            "nullable": true}
+        }
+      },
+      "pois": {
+        "name": "Points of Interest",
+        "file_pattern": "gis_osm_pois_free_1",
+        "geometry_type": "Point",
+        "db_table_pattern": "{country}_osm_pois",
+        "parquet_file_pattern": "{country}_osm_pois.parquet",
+        "properties": {
+          "osm_id": {"type": "string",  "max_length": 20,  "description": "OSM object ID",   "index": true,  "nullable": false},
+          "code":   {"type": "integer", "description": "OSM feature code",                     "nullable": true},
+          "fclass": {"type": "string",  "max_length": 50,  "description": "POI class",        "index": true,  "nullable": true},
+          "name":   {"type": "string",  "max_length": 200, "description": "POI name",          "index": true,  "nullable": true}
+        }
+      },
+      "landuse": {
+        "name": "Land Use",
+        "file_pattern": "gis_osm_landuse_a_free_1",
+        "geometry_type": "MultiPolygon",
+        "db_table_pattern": "{country}_osm_landuse",
+        "parquet_file_pattern": "{country}_osm_landuse.parquet",
+        "properties": {
+          "osm_id": {"type": "string",  "max_length": 20,  "description": "OSM object ID",    "index": true,  "nullable": false},
+          "code":   {"type": "integer", "description": "OSM feature code",                      "nullable": true},
+          "fclass": {"type": "string",  "max_length": 50,  "description": "Land use class",    "index": true,  "nullable": true},
+          "name":   {"type": "string",  "max_length": 200, "description": "Area name",          "nullable": true}
+        }
+      },
+      "waterways": {
+        "name": "Waterways",
+        "file_pattern": "gis_osm_waterways_free_1",
+        "geometry_type": "MultiLineString",
+        "db_table_pattern": "{country}_osm_waterways",
+        "parquet_file_pattern": "{country}_osm_waterways.parquet",
+        "properties": {
+          "osm_id": {"type": "string",  "max_length": 20,  "description": "OSM object ID",       "index": true,  "nullable": false},
+          "code":   {"type": "integer", "description": "OSM feature code",                         "nullable": true},
+          "fclass": {"type": "string",  "max_length": 50,  "description": "Waterway class",       "index": true,  "nullable": true},
+          "name":   {"type": "string",  "max_length": 200, "description": "Waterway name",         "index": true,  "nullable": true},
+          "width":  {"type": "integer", "description": "Width in meters",                           "nullable": true}
+        }
+      },
+      "water_areas": {
+        "name": "Water Areas",
+        "file_pattern": "gis_osm_water_a_free_1",
+        "geometry_type": "MultiPolygon",
+        "db_table_pattern": "{country}_osm_water",
+        "parquet_file_pattern": "{country}_osm_water.parquet",
+        "properties": {
+          "osm_id": {"type": "string",  "max_length": 20,  "description": "OSM object ID",   "index": true,  "nullable": false},
+          "code":   {"type": "integer", "description": "OSM feature code",                     "nullable": true},
+          "fclass": {"type": "string",  "max_length": 50,  "description": "Water class",      "index": true,  "nullable": true},
+          "name":   {"type": "string",  "max_length": 200, "description": "Water body name",   "index": true,  "nullable": true}
+        }
+      },
+      "railways": {
+        "name": "Railways",
+        "file_pattern": "gis_osm_railways_free_1",
+        "geometry_type": "MultiLineString",
+        "db_table_pattern": "{country}_osm_railways",
+        "parquet_file_pattern": "{country}_osm_railways.parquet",
+        "properties": {
+          "osm_id": {"type": "string",  "max_length": 20,  "description": "OSM object ID",   "index": true,  "nullable": false},
+          "code":   {"type": "integer", "description": "OSM feature code",                     "nullable": true},
+          "fclass": {"type": "string",  "max_length": 50,  "description": "Railway class",    "index": true,  "nullable": true},
+          "name":   {"type": "string",  "max_length": 200, "description": "Railway name",      "nullable": true}
+        }
+      }
+    },
+    "storage": {
+      "db_schema": "osm_raw",
+      "parquet_path": "osm/{country}/",
+      "object_storage_prefix": "s3://geodata/osm/"
+    },
+    "tags": ["osm", "roads", "buildings", "poi", "landuse", "water", "vector"]
+  },
+  {
+    "id": "wfp-adam",
+    "name": "WFP ADAM (Automatic Disaster Analysis & Mapping)",
+    "description": "WFP hazard exposure and impact data — flood, drought, cyclone events",
+    "source_type": "generic",
+    "protocol": "api",
+    "base_url": "https://geonode.wfp.org/",
+    "urls": {
+      "api": "https://geonode.wfp.org/api/v2/layers/",
+      "wms": "https://geonode.wfp.org/geoserver/wms"
+    },
+    "formats": ["geojson", "shp", "wms"],
+    "default_format": "geojson",
+    "license": "CC-BY-SA-4.0",
+    "attribution": "World Food Programme",
+    "crs": "EPSG:4326",
+    "auth_config": {"type": "none"},
+    "layers": {
+      "flood_exposure": {
+        "name": "Flood Exposure",
+        "geometry_type": "MultiPolygon",
+        "db_table": "wfp_flood_exposure",
+        "properties": {
+          "adm0_code": {"type": "integer", "description": "Admin0 P-code",        "index": true, "nullable": false},
+          "adm0_name": {"type": "string",  "max_length": 100, "description": "Country name",   "nullable": false},
+          "adm1_code": {"type": "integer", "description": "Admin1 P-code",        "index": true, "nullable": true},
+          "adm1_name": {"type": "string",  "max_length": 200, "description": "Admin1 name",    "nullable": true},
+          "pop_exp":   {"type": "float",   "description": "Population exposed",                  "nullable": true},
+          "area_km2":  {"type": "float",   "description": "Area exposed (km2)",                  "nullable": true},
+          "event_date":{"type": "date",    "description": "Event date",                          "nullable": true}
+        }
+      }
+    },
+    "storage": {
+      "db_schema": "hazard_raw",
+      "parquet_path": "wfp/",
+      "object_storage_prefix": "s3://geodata/wfp/"
+    },
+    "tags": ["hazard", "flood", "drought", "impact", "humanitarian"]
+  },
+  {
+    "id": "chirps-rainfall",
+    "name": "CHIRPS Rainfall Estimates",
+    "description": "Climate Hazards Group InfraRed Precipitation — daily/monthly/dekadal rainfall 0.05° resolution",
+    "source_type": "generic",
+    "protocol": "https",
+    "version": "2.0",
+    "base_url": "https://data.chc.ucsb.edu/products/CHIRPS-2.0/",
+    "urls": {
+      "daily_africa": "https://data.chc.ucsb.edu/products/CHIRPS-2.0/africa_daily/tifs/p05/{year}/chirps-v2.0.{year}.{month}.{day}.tif",
+      "monthly_africa": "https://data.chc.ucsb.edu/products/CHIRPS-2.0/africa_monthly/tifs/chirps-v2.0.{year}.{month}.tif",
+      "dekadal_africa": "https://data.chc.ucsb.edu/products/CHIRPS-2.0/africa_dekad/tifs/chirps-v2.0.{year}.{month}.{dekad}.tif"
+    },
+    "formats": ["tif", "nc"],
+    "default_format": "tif",
+    "license": "Public Domain",
+    "attribution": "UCSB Climate Hazards Group",
+    "crs": "EPSG:4326",
+    "geometry_type": "Raster",
+    "spatial_resolution": "0.05 degrees (~5.5km)",
+    "temporal_resolution": ["daily", "dekadal", "monthly"],
+    "temporal_extent": {"start": "1981-01-01", "end": "present"},
+    "update_frequency": "daily",
+    "layers": {
+      "daily": {
+        "name": "Daily Rainfall",
+        "band_count": 1,
+        "band_name": "precipitation",
+        "unit": "mm/day",
+        "nodata": -9999,
+        "dtype": "float32",
+        "value_range": [0, 1000],
+        "parquet_file_pattern": "chirps_daily_{year}{month}{day}.parquet",
+        "db_table": "chirps_daily",
+        "properties": {
+          "date":       {"type": "date",   "description": "Observation date",           "index": true, "nullable": false},
+          "pixel_x":    {"type": "float",  "description": "Longitude of pixel center",  "nullable": false},
+          "pixel_y":    {"type": "float",  "description": "Latitude of pixel center",   "nullable": false},
+          "rainfall":   {"type": "float",  "description": "Rainfall (mm/day)",           "nullable": true},
+          "iso3":       {"type": "string", "max_length": 3, "description": "Country (if clipped)", "index": true, "nullable": true},
+          "admin1":     {"type": "string", "max_length": 200, "description": "Admin1 (if zonal)", "nullable": true}
+        }
+      },
+      "monthly": {
+        "name": "Monthly Rainfall",
+        "band_count": 1,
+        "band_name": "precipitation",
+        "unit": "mm/month",
+        "nodata": -9999,
+        "dtype": "float32",
+        "value_range": [0, 3000],
+        "parquet_file_pattern": "chirps_monthly_{year}{month}.parquet",
+        "db_table": "chirps_monthly"
+      },
+      "dekadal": {
+        "name": "Dekadal Rainfall (10-day)",
+        "band_count": 1,
+        "band_name": "precipitation",
+        "unit": "mm/dekad",
+        "nodata": -9999,
+        "dtype": "float32",
+        "value_range": [0, 1500],
+        "parquet_file_pattern": "chirps_dekadal_{year}{month}_{dekad}.parquet",
+        "db_table": "chirps_dekadal"
+      }
+    },
+    "storage": {
+      "db_schema": "climate_raw",
+      "parquet_path": "chirps/{temporal_resolution}/{year}/",
+      "object_storage_prefix": "s3://geodata/chirps/v2.0/"
+    },
+    "tags": ["climate", "rainfall", "precipitation", "raster", "time-series"]
+  },
+  {
+    "id": "copernicus-glofas",
+    "name": "Copernicus GloFAS (Global Flood Awareness System)",
+    "description": "River discharge forecasts and reanalysis — flood early warning",
+    "source_type": "generic",
+    "protocol": "api",
+    "version": "4.0",
+    "base_url": "https://cds.climate.copernicus.eu/api/v2",
+    "urls": {
+      "cds_api": "https://cds.climate.copernicus.eu/api/v2",
+      "wms": "https://cds.climate.copernicus.eu/geoserver/wms"
+    },
+    "formats": ["grib", "nc"],
+    "default_format": "nc",
+    "license": "Copernicus License",
+    "attribution": "Copernicus Emergency Management Service",
+    "crs": "EPSG:4326",
+    "geometry_type": "Raster",
+    "spatial_resolution": "0.1 degrees (~11km)",
+    "auth_config": {
+      "type": "api_key",
+      "env_var": "CDSAPI_KEY",
+      "signup_url": "https://cds.climate.copernicus.eu/user/register"
+    },
+    "layers": {
+      "discharge_forecast": {
+        "name": "River Discharge Forecast",
+        "band_name": "dis24",
+        "unit": "m3/s",
+        "dtype": "float32",
+        "nodata": -9999,
+        "db_table": "glofas_discharge_forecast",
+        "parquet_file_pattern": "glofas_forecast_{date}.parquet",
+        "properties": {
+          "date":      {"type": "date",    "description": "Forecast date",               "index": true, "nullable": false},
+          "lead_time": {"type": "integer", "description": "Lead time (hours)",            "nullable": false},
+          "latitude":  {"type": "float",   "description": "Latitude",                     "nullable": false},
+          "longitude": {"type": "float",   "description": "Longitude",                    "nullable": false},
+          "discharge": {"type": "float",   "description": "River discharge (m3/s)",       "nullable": true},
+          "return_period": {"type": "integer", "description": "Return period (years)",    "nullable": true}
+        }
+      },
+      "discharge_reanalysis": {
+        "name": "River Discharge Reanalysis",
+        "band_name": "dis24",
+        "unit": "m3/s",
+        "dtype": "float32",
+        "db_table": "glofas_discharge_reanalysis",
+        "parquet_file_pattern": "glofas_reanalysis_{year}{month}.parquet"
+      }
+    },
+    "storage": {
+      "db_schema": "hydro_raw",
+      "parquet_path": "glofas/{product}/{year}/",
+      "object_storage_prefix": "s3://geodata/glofas/v4.0/"
+    },
+    "tags": ["flood", "forecast", "hydrology", "raster", "time-series"]
+  },
+  {
+    "id": "worldpop",
+    "name": "WorldPop Population Estimates",
+    "description": "Gridded population estimates at 100m and 1km resolution",
+    "source_type": "generic",
+    "protocol": "https",
+    "version": "2020",
+    "base_url": "https://data.worldpop.org/GIS/Population/",
+    "urls": {
+      "constrained_2020": "https://data.worldpop.org/GIS/Population/Global_2000_2020_Constrained/2020/maxar_v1/{ISO3_UPPER}/{iso3_lower}_ppp_2020_UNadj_constrained.tif",
+      "unconstrained_2020": "https://data.worldpop.org/GIS/Population/Global_2000_2020/2020/{ISO3_UPPER}/{iso3_lower}_ppp_2020_UNadj.tif"
+    },
+    "formats": ["tif"],
+    "default_format": "tif",
+    "license": "CC-BY-4.0",
+    "attribution": "WorldPop - https://www.worldpop.org",
+    "crs": "EPSG:4326",
+    "geometry_type": "Raster",
+    "spatial_resolution": "100m (constrained), 1km (unconstrained)",
+    "layers": {
+      "constrained_2020": {
+        "name": "Constrained Population 2020 (100m)",
+        "band_count": 1,
+        "band_name": "population",
+        "unit": "people/pixel",
+        "dtype": "float32",
+        "nodata": -99999,
+        "db_table_pattern": "{iso3_lower}_pop_constrained_2020",
+        "parquet_file_pattern": "{iso3_lower}_pop_2020_constrained.parquet",
+        "properties": {
+          "iso3":       {"type": "string", "max_length": 3,   "description": "Country ISO3",      "index": true, "nullable": false},
+          "pixel_x":    {"type": "float",  "description": "Longitude",                              "nullable": false},
+          "pixel_y":    {"type": "float",  "description": "Latitude",                               "nullable": false},
+          "population": {"type": "float",  "description": "Population count per pixel",             "nullable": true},
+          "admin1":     {"type": "string", "max_length": 200, "description": "Admin1 (if zonal)",   "nullable": true},
+          "admin2":     {"type": "string", "max_length": 200, "description": "Admin2 (if zonal)",   "nullable": true}
+        }
+      },
+      "unconstrained_2020": {
+        "name": "Unconstrained Population 2020 (1km)",
+        "band_count": 1,
+        "band_name": "population",
+        "unit": "people/pixel",
+        "dtype": "float32",
+        "nodata": -99999,
+        "db_table_pattern": "{iso3_lower}_pop_unconstrained_2020",
+        "parquet_file_pattern": "{iso3_lower}_pop_2020_unconstrained.parquet"
+      }
+    },
+    "storage": {
+      "db_schema": "population_raw",
+      "parquet_path": "worldpop/{iso3}/{year}/",
+      "object_storage_prefix": "s3://geodata/worldpop/2020/"
+    },
+    "tags": ["population", "demographics", "raster"]
+  },
+  {
+    "id": "icpac-geomanager",
+    "name": "ICPAC GeoManager",
+    "description": "ICPAC operational GIS layers — climate, food security, flood watch",
+    "source_type": "generic",
+    "protocol": "api",
+    "base_url": "https://geomanager.icpac.net/",
+    "urls": {
+      "datasets": "https://geomanager.icpac.net/api/datasets/",
+      "raster_tiles": "https://geomanager.icpac.net/api/raster-tiles/{layer_id}/{z}/{x}/{y}",
+      "wms": "https://geomanager.icpac.net/api/mapviewer/wms/"
+    },
+    "formats": ["geojson", "wms", "mvt", "cog"],
+    "default_format": "geojson",
+    "license": "Open",
+    "attribution": "IGAD Climate Prediction and Applications Centre (ICPAC)",
+    "crs": "EPSG:4326",
+    "auth_config": {"type": "none"},
+    "layers": {
+      "boundaries": {
+        "name": "Administrative Boundaries",
+        "geometry_type": "MultiPolygon",
+        "db_table": "icpac_boundaries"
+      },
+      "flood_watch": {
+        "name": "Flood Watch Layers",
+        "geometry_type": "Raster",
+        "db_table": "icpac_flood_watch"
+      }
+    },
+    "storage": {
+      "db_schema": "icpac_raw",
+      "parquet_path": "icpac/",
+      "object_storage_prefix": "s3://geodata/icpac/"
+    },
+    "tags": ["climate", "food-security", "flood", "operational", "icpac"]
+  },
+  {
+    "id": "hydrosheds",
+    "name": "HydroSHEDS",
+    "description": "Hydrological data — river basins at 12 Pfafstetter levels, rivers with Strahler order",
+    "source_type": "generic",
+    "protocol": "https",
+    "version": "1.0",
+    "base_url": "https://data.hydrosheds.org/",
+    "urls": {
+      "basins_lev04_africa": "https://data.hydrosheds.org/file/HydroBASINS/standard/hybas_af_lev04_v1c.zip",
+      "basins_lev06_africa": "https://data.hydrosheds.org/file/HydroBASINS/standard/hybas_af_lev06_v1c.zip",
+      "basins_lev08_africa": "https://data.hydrosheds.org/file/HydroBASINS/standard/hybas_af_lev08_v1c.zip",
+      "rivers_africa": "https://data.hydrosheds.org/file/HydroRIVERS/HydroRIVERS_v10_af_shp.zip"
+    },
+    "formats": ["shp"],
+    "default_format": "shp",
+    "license": "HydroSHEDS License (free for non-commercial)",
+    "attribution": "WWF HydroSHEDS - https://www.hydrosheds.org",
+    "crs": "EPSG:4326",
+    "layers": {
+      "basins": {
+        "name": "HydroBASINS Africa",
+        "geometry_type": "MultiPolygon",
+        "db_table_pattern": "hydrobasins_af_lev{level}",
+        "parquet_file_pattern": "hydrobasins_af_lev{level}.parquet",
+        "properties": {
+          "HYBAS_ID":   {"type": "integer", "description": "Basin ID (unique)",               "index": true,  "nullable": false},
+          "NEXT_DOWN":  {"type": "integer", "description": "Next downstream basin ID",        "index": true,  "nullable": false},
+          "NEXT_SINK":  {"type": "integer", "description": "Terminal sink basin ID",           "nullable": false},
+          "MAIN_BAS":   {"type": "integer", "description": "Main basin ID",                   "index": true,  "nullable": false},
+          "DIST_SINK":  {"type": "float",   "description": "Distance to sink (km)",            "nullable": false},
+          "DIST_MAIN":  {"type": "float",   "description": "Distance to main river (km)",     "nullable": false},
+          "SUB_AREA":   {"type": "float",   "description": "Sub-basin area (km2)",             "nullable": false},
+          "UP_AREA":    {"type": "float",   "description": "Total upstream area (km2)",        "nullable": false},
+          "PFAF_ID":    {"type": "integer", "description": "Pfafstetter code",                "index": true,  "nullable": false},
+          "ENDO":       {"type": "integer", "description": "Endorheic flag (0/1/2)",           "nullable": false},
+          "COAST":      {"type": "integer", "description": "Coastal flag (0/1)",               "nullable": false},
+          "ORDER":      {"type": "integer", "description": "Strahler stream order",            "nullable": false},
+          "SORT":       {"type": "integer", "description": "Sort order (downstream first)",    "nullable": false}
+        }
+      },
+      "rivers": {
+        "name": "HydroRIVERS Africa",
+        "geometry_type": "MultiLineString",
+        "db_table": "hydrorivers_af",
+        "parquet_file": "hydrorivers_af.parquet",
+        "properties": {
+          "HYRIV_ID":   {"type": "integer", "description": "River reach ID (unique)",          "index": true,  "nullable": false},
+          "NEXT_DOWN":  {"type": "integer", "description": "Next downstream reach ID",         "index": true,  "nullable": false},
+          "MAIN_RIV":   {"type": "integer", "description": "Main river system ID",             "index": true,  "nullable": false},
+          "LENGTH_KM":  {"type": "float",   "description": "Reach length (km)",                "nullable": false},
+          "DIST_DN_KM": {"type": "float",   "description": "Distance downstream (km)",         "nullable": false},
+          "DIST_UP_KM": {"type": "float",   "description": "Distance upstream (km)",           "nullable": false},
+          "CATCH_SKM":  {"type": "float",   "description": "Catchment area (km2)",             "nullable": false},
+          "UPLAND_SKM": {"type": "float",   "description": "Total upstream area (km2)",        "nullable": false},
+          "DIS_AV_CMS": {"type": "float",   "description": "Average discharge (m3/s)",        "nullable": false},
+          "ORD_STRA":   {"type": "integer", "description": "Strahler stream order",           "index": true,  "nullable": false},
+          "ORD_CLAS":   {"type": "integer", "description": "Classic stream order",             "nullable": false},
+          "ORD_FLOW":   {"type": "integer", "description": "Flow order",                       "nullable": false}
+        }
+      }
+    },
+    "storage": {
+      "db_schema": "hydro_raw",
+      "parquet_path": "hydrosheds/",
+      "object_storage_prefix": "s3://geodata/hydrosheds/v1.0/"
+    },
+    "tags": ["hydrology", "basins", "rivers", "watersheds", "vector"]
+  },
+  {
+    "id": "modis-fire",
+    "name": "MODIS/VIIRS Active Fire Data (FIRMS)",
+    "description": "Near real-time satellite fire detections — points with confidence, brightness, FRP",
+    "source_type": "generic",
+    "protocol": "api",
+    "version": "NRT",
+    "base_url": "https://firms.modaps.eosdis.nasa.gov/",
+    "urls": {
+      "viirs_snpp": "https://firms.modaps.eosdis.nasa.gov/api/area/csv/{MAP_KEY}/VIIRS_SNPP_NRT/{bbox}/{days}",
+      "viirs_noaa20": "https://firms.modaps.eosdis.nasa.gov/api/area/csv/{MAP_KEY}/VIIRS_NOAA20_NRT/{bbox}/{days}",
+      "modis": "https://firms.modaps.eosdis.nasa.gov/api/area/csv/{MAP_KEY}/MODIS_NRT/{bbox}/{days}"
+    },
+    "formats": ["csv", "geojson"],
+    "default_format": "csv",
+    "license": "Public Domain",
+    "attribution": "NASA FIRMS - https://firms.modaps.eosdis.nasa.gov",
+    "crs": "EPSG:4326",
+    "geometry_type": "Point",
+    "auth_config": {
+      "type": "api_key",
+      "env_var": "FIRMS_MAP_KEY",
+      "signup_url": "https://firms.modaps.eosdis.nasa.gov/api/area/"
+    },
+    "layers": {
+      "viirs_snpp": {
+        "name": "VIIRS S-NPP Active Fires",
+        "geometry_type": "Point",
+        "db_table": "firms_viirs_snpp",
+        "parquet_file_pattern": "firms_viirs_snpp_{date}.parquet",
+        "properties": {
+          "latitude":    {"type": "float",   "description": "Latitude (center of pixel)",         "index": true,  "nullable": false},
+          "longitude":   {"type": "float",   "description": "Longitude (center of pixel)",        "index": true,  "nullable": false},
+          "bright_ti4":  {"type": "float",   "description": "Brightness temp I4 band (Kelvin)",   "nullable": false},
+          "bright_ti5":  {"type": "float",   "description": "Brightness temp I5 band (Kelvin)",   "nullable": true},
+          "scan":        {"type": "float",   "description": "Scan pixel size (km)",                "nullable": false},
+          "track":       {"type": "float",   "description": "Track pixel size (km)",               "nullable": false},
+          "acq_date":    {"type": "date",    "description": "Acquisition date",                    "index": true,  "nullable": false},
+          "acq_time":    {"type": "string",  "max_length": 4, "description": "Acquisition time (HHMM UTC)", "nullable": false},
+          "satellite":   {"type": "string",  "max_length": 5, "description": "Satellite (N for S-NPP)",     "nullable": false},
+          "instrument":  {"type": "string",  "max_length": 10, "description": "Instrument (VIIRS)",          "nullable": false},
+          "confidence":  {"type": "string",  "max_length": 10, "description": "Confidence (low/nominal/high)", "index": true, "nullable": false},
+          "version":     {"type": "string",  "max_length": 10, "description": "Processing version",           "nullable": true},
+          "frp":         {"type": "float",   "description": "Fire Radiative Power (MW)",           "nullable": true},
+          "daynight":    {"type": "string",  "max_length": 1,  "description": "Day/Night flag (D/N)",        "nullable": false}
+        }
+      }
+    },
+    "storage": {
+      "db_schema": "fire_raw",
+      "parquet_path": "firms/{satellite}/{year}/",
+      "object_storage_prefix": "s3://geodata/firms/"
+    },
+    "tags": ["fire", "hotspot", "near-real-time", "point", "satellite"]
+  }
+]

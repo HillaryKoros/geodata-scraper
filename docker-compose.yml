@@ -1,0 +1,116 @@
+services:
+  # ── DATABASE (independent service) ──────────────────────
+  db:
+    image: ghcr.io/stac-utils/pgstac:v0.9.5
+    environment:
+      POSTGRES_DB: geodata
+      POSTGRES_USER: geodata
+      POSTGRES_PASSWORD: geodata
+      PGUSER: geodata
+      PGDATABASE: geodata
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U geodata"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ── SCRAPER (independent service) ───────────────────────
+  scraper:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_NAME: geodata
+      DB_USER: geodata
+      DB_PASSWORD: geodata
+      DB_HOST: db
+      DB_PORT: 5432
+      DJANGO_SETTINGS_MODULE: config.settings
+      GEODATA_STORAGE: /data
+    volumes:
+      - .:/app:z
+      - gadm_data:/data
+    # Run migrations, then scrape GADM for IGAD+, then stay alive for more jobs
+    command: >
+      bash -c "
+        python manage.py migrate --noinput &&
+
+        echo '=== [1/4] GADM — scraping admin boundaries ===' &&
+        python manage.py scrape gadm --region igad_plus --format gpkg &&
+
+        echo '=== [2/4] BASELINE — creating merged/dissolved admin0 ===' &&
+        python manage.py create_baseline --simplify 0.01 &&
+
+        echo '=== [3/4] HYDROSHEDS — scraping basins + rivers (clipped to IGAD+) ===' &&
+        python manage.py scrape_hydrosheds &&
+
+        echo '=== [4/4] PARQUET — exporting merged files ===' &&
+        python manage.py export_parquet --region igad_plus --output /data/parquet &&
+
+        echo '=== ALL DONE ===' &&
+        tail -f /dev/null
+      "
+    restart: unless-stopped
+
+  # ── API SERVER (independent service) ────────────────────
+  api:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_NAME: geodata
+      DB_USER: geodata
+      DB_PASSWORD: geodata
+      DB_HOST: db
+      DB_PORT: 5432
+      DJANGO_SETTINGS_MODULE: config.settings
+      GEODATA_STORAGE: /data
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app:z
+      - gadm_data:/data
+    command: >
+      bash -c "
+        python manage.py migrate --noinput &&
+        python manage.py collectstatic --noinput 2>/dev/null;
+        gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 2
+      "
+    restart: unless-stopped
+
+  # ── NOTEBOOK (independent service) ──────────────────────
+  notebook:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_NAME: geodata
+      DB_USER: geodata
+      DB_PASSWORD: geodata
+      DB_HOST: db
+      DB_PORT: 5432
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./notebooks:/app/notebooks:z
+      - gadm_data:/data
+    command: >
+      bash -c "
+        pip install -q jupyter sqlalchemy geopandas matplotlib requests pyarrow &&
+        jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --allow-root
+        --NotebookApp.token='geodata'
+        --notebook-dir=/app/notebooks
+      "
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  gadm_data:
