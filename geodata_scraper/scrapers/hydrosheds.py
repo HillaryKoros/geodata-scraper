@@ -54,9 +54,16 @@ CONTINENTS = {
 
 class HydroSHEDSScraper(BaseScraper):
     name = "hydrosheds"
-    description = "HydroSHEDS — HydroBASINS (watershed boundaries) + HydroRIVERS (river network)"
+    description = (
+        "HydroSHEDS — HydroBASINS (watershed boundaries) + HydroRIVERS (river network)"
+    )
 
-    def __init__(self, continent: str = "africa", levels: list[int] | None = None, include_rivers: bool = True):
+    def __init__(
+        self,
+        continent: str = "africa",
+        levels: list[int] | None = None,
+        include_rivers: bool = True,
+    ):
         self.continent = continent
         self.cont_code = CONTINENTS.get(continent, "af")
         self.levels = levels or list(range(1, 13))  # default: all 12 Pfafstetter levels
@@ -70,28 +77,38 @@ class HydroSHEDSScraper(BaseScraper):
         for level in self.levels:
             level_str = f"{level:02d}"
             url = f"{BASE_URL}/HydroBASINS/standard/hybas_{self.cont_code}_lev{level_str}_v1c.zip"
-            dest = storage_dir / "hydrosheds" / f"hybas_{self.cont_code}_lev{level_str}_v1c.zip"
-            tasks.append({
-                "url": url,
-                "dest": dest,
-                "iso3": self.cont_code.upper(),
-                "admin_level": level,
-                "format": "shp_zip",
-                "layer_type": "basins",
-            })
+            dest = (
+                storage_dir
+                / "hydrosheds"
+                / f"hybas_{self.cont_code}_lev{level_str}_v1c.zip"
+            )
+            tasks.append(
+                {
+                    "url": url,
+                    "dest": dest,
+                    "iso3": self.cont_code.upper(),
+                    "admin_level": level,
+                    "format": "shp_zip",
+                    "layer_type": "basins",
+                }
+            )
 
         # HydroRIVERS
         if self.include_rivers:
             url = f"{BASE_URL}/HydroRIVERS/HydroRIVERS_v10_{self.cont_code}_shp.zip"
-            dest = storage_dir / "hydrosheds" / f"HydroRIVERS_v10_{self.cont_code}_shp.zip"
-            tasks.append({
-                "url": url,
-                "dest": dest,
-                "iso3": self.cont_code.upper(),
-                "admin_level": -1,
-                "format": "shp_zip",
-                "layer_type": "rivers",
-            })
+            dest = (
+                storage_dir / "hydrosheds" / f"HydroRIVERS_v10_{self.cont_code}_shp.zip"
+            )
+            tasks.append(
+                {
+                    "url": url,
+                    "dest": dest,
+                    "iso3": self.cont_code.upper(),
+                    "admin_level": -1,
+                    "format": "shp_zip",
+                    "layer_type": "rivers",
+                }
+            )
 
         return tasks
 
@@ -100,7 +117,6 @@ class HydroSHEDSScraper(BaseScraper):
         dest = task["dest"]
         iso3 = task["iso3"]
         admin_level = task["admin_level"]
-        fmt = task["format"]
         layer_type = task.get("layer_type", "basins")
 
         dest.parent.mkdir(parents=True, exist_ok=True)
@@ -113,9 +129,13 @@ class HydroSHEDSScraper(BaseScraper):
             if not extract_dir.exists():
                 self._extract_zip(dest, extract_dir)
             return ExtractResult(
-                url=url, local_path=extract_dir, iso3=iso3,
-                admin_level=admin_level, format="shp",
-                size=dest.stat().st_size, success=True,
+                url=url,
+                local_path=extract_dir,
+                iso3=iso3,
+                admin_level=admin_level,
+                format="shp",
+                size=dest.stat().st_size,
+                success=True,
             )
 
         retries = 3
@@ -123,6 +143,7 @@ class HydroSHEDSScraper(BaseScraper):
         chunk_size = 256 * 1024
         try:
             from ..settings import scraper_settings
+
             retries = scraper_settings.DOWNLOAD_RETRIES
             timeout = max(scraper_settings.DOWNLOAD_TIMEOUT, 600)
             chunk_size = scraper_settings.CHUNK_SIZE
@@ -132,7 +153,8 @@ class HydroSHEDSScraper(BaseScraper):
         for attempt in range(1, retries + 1):
             try:
                 with httpx.stream(
-                    "GET", url,
+                    "GET",
+                    url,
                     timeout=timeout,
                     headers={"User-Agent": "geodata-scraper/0.1"},
                     follow_redirects=True,
@@ -148,8 +170,12 @@ class HydroSHEDSScraper(BaseScraper):
 
                     tmp.rename(dest)
 
-                    level_str = f"level {admin_level:02d}" if admin_level >= 0 else "rivers"
-                    log.info(f"OK: HydroSHEDS {layer_type} {level_str} — {dest.name} ({_fmt_size(downloaded)})")
+                    level_str = (
+                        f"level {admin_level:02d}" if admin_level >= 0 else "rivers"
+                    )
+                    log.info(
+                        f"OK: HydroSHEDS {layer_type} {level_str} — {dest.name} ({_fmt_size(downloaded)})"
+                    )
 
                     # Extract zip
                     self._extract_zip(dest, extract_dir)
@@ -160,9 +186,13 @@ class HydroSHEDSScraper(BaseScraper):
                         log.info(f"    {shp.name}")
 
                     return ExtractResult(
-                        url=url, local_path=extract_dir, iso3=iso3,
-                        admin_level=admin_level, format="shp",
-                        size=downloaded, success=True,
+                        url=url,
+                        local_path=extract_dir,
+                        iso3=iso3,
+                        admin_level=admin_level,
+                        format="shp",
+                        size=downloaded,
+                        success=True,
                     )
 
             except (httpx.HTTPError, OSError) as e:
@@ -171,9 +201,14 @@ class HydroSHEDSScraper(BaseScraper):
 
         log.error(f"FAILED: {dest.name}")
         return ExtractResult(
-            url=url, local_path=dest, iso3=iso3,
-            admin_level=admin_level, format="shp",
-            size=0, success=False, error=f"Failed after {retries} attempts",
+            url=url,
+            local_path=dest,
+            iso3=iso3,
+            admin_level=admin_level,
+            format="shp",
+            size=0,
+            success=False,
+            error=f"Failed after {retries} attempts",
         )
 
     def _extract_zip(self, zip_path: Path, extract_dir: Path):

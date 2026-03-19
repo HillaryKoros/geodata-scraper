@@ -36,13 +36,15 @@ class HTTPScraper(BaseScraper):
             filename = url.split("/")[-1].split("?")[0]
             dest = storage_dir / "http" / filename
             fmt = Path(filename).suffix.lstrip(".")
-            tasks.append({
-                "url": url,
-                "dest": dest,
-                "iso3": "",
-                "admin_level": -1,
-                "format": fmt,
-            })
+            tasks.append(
+                {
+                    "url": url,
+                    "dest": dest,
+                    "iso3": "",
+                    "admin_level": -1,
+                    "format": fmt,
+                }
+            )
 
         return tasks
 
@@ -53,9 +55,13 @@ class HTTPScraper(BaseScraper):
 
         if dest.exists() and dest.stat().st_size > 0:
             return ExtractResult(
-                url=url, local_path=dest, iso3=task["iso3"],
-                admin_level=task["admin_level"], format=task["format"],
-                size=dest.stat().st_size, success=True,
+                url=url,
+                local_path=dest,
+                iso3=task["iso3"],
+                admin_level=task["admin_level"],
+                format=task["format"],
+                size=dest.stat().st_size,
+                success=True,
             )
 
         from ..settings import scraper_settings
@@ -63,7 +69,8 @@ class HTTPScraper(BaseScraper):
         for attempt in range(1, scraper_settings.DOWNLOAD_RETRIES + 1):
             try:
                 with httpx.stream(
-                    "GET", url,
+                    "GET",
+                    url,
                     timeout=scraper_settings.DOWNLOAD_TIMEOUT,
                     headers=self.headers,
                     follow_redirects=True,
@@ -73,16 +80,22 @@ class HTTPScraper(BaseScraper):
                     downloaded = 0
 
                     with open(tmp, "wb") as f:
-                        for chunk in resp.iter_bytes(chunk_size=scraper_settings.CHUNK_SIZE):
+                        for chunk in resp.iter_bytes(
+                            chunk_size=scraper_settings.CHUNK_SIZE
+                        ):
                             f.write(chunk)
                             downloaded += len(chunk)
 
                     tmp.rename(dest)
                     log.info(f"OK: {dest.name} ({downloaded} bytes)")
                     return ExtractResult(
-                        url=url, local_path=dest, iso3=task["iso3"],
-                        admin_level=task["admin_level"], format=task["format"],
-                        size=downloaded, success=True,
+                        url=url,
+                        local_path=dest,
+                        iso3=task["iso3"],
+                        admin_level=task["admin_level"],
+                        format=task["format"],
+                        size=downloaded,
+                        success=True,
                     )
 
             except (httpx.HTTPError, OSError) as e:
@@ -90,7 +103,12 @@ class HTTPScraper(BaseScraper):
                 time.sleep(2 * attempt)
 
         return ExtractResult(
-            url=url, local_path=dest, iso3=task["iso3"],
-            admin_level=task["admin_level"], format=task["format"],
-            size=0, success=False, error="Download failed",
+            url=url,
+            local_path=dest,
+            iso3=task["iso3"],
+            admin_level=task["admin_level"],
+            format=task["format"],
+            size=0,
+            success=False,
+            error="Download failed",
         )

@@ -25,18 +25,22 @@ class DataSource(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255, unique=True)
     source_type = models.CharField(max_length=50, choices=SOURCE_TYPE_CHOICES)
-    protocol = models.CharField(max_length=20, choices=PROTOCOL_CHOICES, default="https")
+    protocol = models.CharField(
+        max_length=20, choices=PROTOCOL_CHOICES, default="https"
+    )
     base_url = models.URLField(
         max_length=500,
         blank=True,
         help_text="Base URL pattern. Use {iso3}, {level} as placeholders.",
     )
     auth_config = models.JSONField(
-        blank=True, default=dict,
+        blank=True,
+        default=dict,
         help_text="Auth credentials: {username, password, token, key}",
     )
     extra_config = models.JSONField(
-        blank=True, default=dict,
+        blank=True,
+        default=dict,
         help_text="Source-specific config (headers, params, etc.)",
     )
     is_active = models.BooleanField(default=True)
@@ -64,9 +68,13 @@ class ScrapeJob(models.Model):
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    source = models.ForeignKey(DataSource, on_delete=models.CASCADE, related_name="jobs")
+    source = models.ForeignKey(
+        DataSource, on_delete=models.CASCADE, related_name="jobs"
+    )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
-    region = models.CharField(max_length=100, blank=True, help_text="Region or country codes")
+    region = models.CharField(
+        max_length=100, blank=True, help_text="Region or country codes"
+    )
     countries = models.JSONField(default=list, help_text="Resolved ISO3 codes")
     admin_levels = models.JSONField(default=list, help_text="Admin levels scraped")
 
@@ -134,19 +142,25 @@ class IngestedLayer(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     job = models.ForeignKey(ScrapeJob, on_delete=models.CASCADE, related_name="layers")
-    source = models.ForeignKey(DataSource, on_delete=models.CASCADE, related_name="layers")
+    source = models.ForeignKey(
+        DataSource, on_delete=models.CASCADE, related_name="layers"
+    )
 
     # PostGIS table reference
     db_schema = models.CharField(max_length=100)
     db_table = models.CharField(max_length=255)
     geom_column = models.CharField(max_length=100, default="geom")
-    geom_type = models.CharField(max_length=30, choices=GEOM_TYPE_CHOICES, default="MULTIPOLYGON")
+    geom_type = models.CharField(
+        max_length=30, choices=GEOM_TYPE_CHOICES, default="MULTIPOLYGON"
+    )
     srid = models.IntegerField(default=4326)
 
     # Metadata
     name = models.CharField(max_length=255, help_text="Human-readable layer name")
     description = models.TextField(blank=True)
-    iso3 = models.CharField(max_length=3, blank=True, db_index=True, help_text="Country ISO3 code")
+    iso3 = models.CharField(
+        max_length=3, blank=True, db_index=True, help_text="Country ISO3 code"
+    )
     admin_level = models.IntegerField(null=True, blank=True, db_index=True)
     feature_count = models.IntegerField(default=0)
     properties = models.JSONField(default=list, help_text="Column names in the table")
@@ -156,7 +170,9 @@ class IngestedLayer(models.Model):
 
     # Tracking
     source_url = models.URLField(max_length=500, blank=True)
-    source_format = models.CharField(max_length=20, blank=True, help_text="gpkg, shp, geojson, etc.")
+    source_format = models.CharField(
+        max_length=20, blank=True, help_text="gpkg, shp, geojson, etc."
+    )
     file_size = models.BigIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

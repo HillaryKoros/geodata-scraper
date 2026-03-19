@@ -42,9 +42,9 @@ def transform_layer(schema: str, table: str, geom_col: str = "geom") -> dict:
 
         # 2. Ensure SRID 4326
         try:
-            cur.execute(f'''
+            cur.execute(f"""
                 SELECT Find_SRID('{schema}', '{table}', '{geom_col}')
-            ''')
+            """)
             srid = cur.fetchone()[0]
             if srid != scraper_settings.DEFAULT_SRID:
                 cur.execute(f'''
@@ -52,20 +52,25 @@ def transform_layer(schema: str, table: str, geom_col: str = "geom") -> dict:
                     ALTER COLUMN "{geom_col}"
                     TYPE geometry USING ST_Transform("{geom_col}", {scraper_settings.DEFAULT_SRID})
                 ''')
-                cur.execute(f'''
+                cur.execute(f"""
                     SELECT UpdateGeometrySRID('{schema}', '{table}', '{geom_col}', {scraper_settings.DEFAULT_SRID})
-                ''')
-                results["transforms"].append(f"Reprojected from {srid} to {scraper_settings.DEFAULT_SRID}")
+                """)
+                results["transforms"].append(
+                    f"Reprojected from {srid} to {scraper_settings.DEFAULT_SRID}"
+                )
         except Exception as e:
             log.warning(f"SRID check skipped for {schema}.{table}: {e}")
 
         # 3. Spatial index
         idx_name = f"idx_{table}_{geom_col}"
         try:
-            cur.execute("""
+            cur.execute(
+                """
                 SELECT indexname FROM pg_indexes
                 WHERE schemaname = %s AND tablename = %s AND indexdef LIKE '%%gist%%'
-            """, [schema, table])
+            """,
+                [schema, table],
+            )
             if not cur.fetchone():
                 cur.execute(f'''
                     CREATE INDEX "{idx_name}"
@@ -84,18 +89,21 @@ def transform_layer(schema: str, table: str, geom_col: str = "geom") -> dict:
 
         # 5. Add area_km2 column for polygon layers
         try:
-            cur.execute(f'''
+            cur.execute(f"""
                 SELECT type FROM geometry_columns
                 WHERE f_table_schema = '{schema}'
                 AND f_table_name = '{table}'
                 AND f_geometry_column = '{geom_col}'
-            ''')
+            """)
             row = cur.fetchone()
             if row and "POLYGON" in (row[0] or "").upper():
-                cur.execute(f'''
+                cur.execute(
+                    """
                     SELECT column_name FROM information_schema.columns
                     WHERE table_schema = %s AND table_name = %s AND column_name = 'area_km2'
-                ''', [schema, table])
+                """,
+                    [schema, table],
+                )
                 if not cur.fetchone():
                     cur.execute(f'''
                         ALTER TABLE "{schema}"."{table}"
@@ -109,7 +117,9 @@ def transform_layer(schema: str, table: str, geom_col: str = "geom") -> dict:
         except Exception as e:
             log.warning(f"Area calc skipped for {schema}.{table}: {e}")
 
-    log.info(f"TRANSFORM: {schema}.{table} — {len(results['transforms'])} transforms applied")
+    log.info(
+        f"TRANSFORM: {schema}.{table} — {len(results['transforms'])} transforms applied"
+    )
     return results
 
 
@@ -132,17 +142,24 @@ def create_unified_view(schema_raw: str, schema_clean: str, iso3_list: list[str]
             tables = []
             for iso3 in iso3_list:
                 tbl = f"{iso3.lower()}_admin{level}"
-                cur.execute("""
+                cur.execute(
+                    """
                     SELECT table_name FROM information_schema.tables
                     WHERE table_schema = %s AND table_name = %s
-                """, [schema_raw, tbl])
+                """,
+                    [schema_raw, tbl],
+                )
                 if cur.fetchone():
-                    tables.append(f'SELECT *, \'{iso3.upper()}\' AS country_iso3 FROM "{schema_raw}"."{tbl}"')
+                    tables.append(
+                        f'SELECT *, \'{iso3.upper()}\' AS country_iso3 FROM "{schema_raw}"."{tbl}"'
+                    )
 
             if tables:
                 view_name = f"boundaries_admin{level}"
                 union_sql = " UNION ALL ".join(tables)
-                cur.execute(f'DROP MATERIALIZED VIEW IF EXISTS "{schema_clean}"."{view_name}" CASCADE')
+                cur.execute(
+                    f'DROP MATERIALIZED VIEW IF EXISTS "{schema_clean}"."{view_name}" CASCADE'
+                )
                 cur.execute(f'''
                     CREATE MATERIALIZED VIEW "{schema_clean}"."{view_name}" AS
                     {union_sql}

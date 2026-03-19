@@ -10,7 +10,7 @@ Override in your Django settings.py:
     }
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 from django.conf import settings

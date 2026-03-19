@@ -64,7 +64,7 @@ def main():
 
     print()
     print(f"  Downloaded : {len(ok)}/{len(results)} files")
-    print(f"  Total size : {total_bytes / (1024*1024):.1f} MB")
+    print(f"  Total size : {total_bytes / (1024 * 1024):.1f} MB")
     print(f"  Failed     : {len(failed)}")
     print(f"  Time       : {elapsed:.1f}s")
     print(f"  Location   : {STORAGE}")

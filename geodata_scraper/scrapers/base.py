@@ -10,6 +10,7 @@ from pathlib import Path
 @dataclass
 class ExtractResult:
     """Result of extracting one file."""
+
     url: str
     local_path: Path
     iso3: str
@@ -56,6 +57,7 @@ class BaseScraper(ABC):
 
         try:
             from ..settings import scraper_settings
+
             workers = scraper_settings.DOWNLOAD_WORKERS
         except Exception:
             pass  # standalone mode — use default
@@ -63,12 +65,9 @@ class BaseScraper(ABC):
         tasks = self.build_tasks(countries, storage_dir=storage_dir, **kwargs)
         results = []
 
-        with concurrent.futures.ThreadPoolExecutor(
-            max_workers=workers
-        ) as pool:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pool:
             futures = {
-                pool.submit(self.extract, task, storage_dir): task
-                for task in tasks
+                pool.submit(self.extract, task, storage_dir): task for task in tasks
             }
             for future in concurrent.futures.as_completed(futures):
                 results.append(future.result())

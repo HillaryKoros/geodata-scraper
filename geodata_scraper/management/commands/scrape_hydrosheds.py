@@ -19,7 +19,6 @@ Usage:
 """
 
 import logging
-from pathlib import Path
 
 from django.core.management.base import BaseCommand
 from django.db import connection
@@ -37,9 +36,16 @@ class Command(BaseCommand):
     help = "Scrape HydroSHEDS basins + rivers, clip to IGAD+ admin0"
 
     def add_arguments(self, parser):
-        parser.add_argument("--levels", type=str, default="1,2,3,4,5,6,7,8,9,10,11,12", help="Basin levels (comma-separated, default: all 12)")
+        parser.add_argument(
+            "--levels",
+            type=str,
+            default="1,2,3,4,5,6,7,8,9,10,11,12",
+            help="Basin levels (comma-separated, default: all 12)",
+        )
         parser.add_argument("--no-rivers", action="store_true", help="Skip HydroRIVERS")
-        parser.add_argument("--no-clip", action="store_true", help="Keep full Africa (no clip to IGAD+)")
+        parser.add_argument(
+            "--no-clip", action="store_true", help="Keep full Africa (no clip to IGAD+)"
+        )
         parser.add_argument("--schema", type=str, default="hydro_raw")
         parser.add_argument("--dry-run", action="store_true")
         parser.add_argument("--continent", type=str, default="africa")
@@ -86,13 +92,18 @@ class Command(BaseCommand):
         # Create source
         data_source, _ = DataSource.objects.get_or_create(
             name="HydroSHEDS v1.0",
-            defaults={"source_type": "generic", "protocol": "https",
-                       "base_url": "https://data.hydrosheds.org/"},
+            defaults={
+                "source_type": "generic",
+                "protocol": "https",
+                "base_url": "https://data.hydrosheds.org/",
+            },
         )
 
         job = ScrapeJob.objects.create(
-            source=data_source, region=options["continent"],
-            countries=[], total_files=len(tasks),
+            source=data_source,
+            region=options["continent"],
+            countries=[],
+            total_files=len(tasks),
         )
         job.start()
 
@@ -106,7 +117,9 @@ class Command(BaseCommand):
 
         for r in ok:
             lvl = f"lev{r.admin_level:02d}" if r.admin_level >= 0 else "rivers"
-            self.stdout.write(f"  OK  {lvl:8s}  {r.local_path.name:45s}  {_fmt(r.size)}")
+            self.stdout.write(
+                f"  OK  {lvl:8s}  {r.local_path.name:45s}  {_fmt(r.size)}"
+            )
 
         self.stdout.write(f"\n  Total: {len(ok)}/{len(results)} ({_fmt(total_bytes)})")
         for f in failed:
@@ -133,7 +146,7 @@ class Command(BaseCommand):
                 if result.admin_level >= 0:
                     table_name = f"hydrobasins_af_lev{result.admin_level:02d}"
                 else:
-                    table_name = f"hydrorivers_af"
+                    table_name = "hydrorivers_af"
 
                 self.stdout.write(f"\n  ▶ {shp.name} → {schema}.{table_name}")
 
@@ -151,19 +164,28 @@ class Command(BaseCommand):
                     if clip:
                         clipped = self._clip_to_igad(schema, table_name)
                         if clipped is not None:
-                            self.stdout.write(f"    Clipped to IGAD+: {clipped} features remaining")
+                            self.stdout.write(
+                                f"    Clipped to IGAD+: {clipped} features remaining"
+                            )
                             feat_count = clipped
 
                     IngestedLayer.objects.update_or_create(
-                        db_schema=schema, db_table=table_name,
+                        db_schema=schema,
+                        db_table=table_name,
                         defaults={
-                            "job": job, "source": data_source,
-                            "name": f"HydroBASINS Africa lev{result.admin_level:02d}" if result.admin_level >= 0 else "HydroRIVERS Africa",
+                            "job": job,
+                            "source": data_source,
+                            "name": f"HydroBASINS Africa lev{result.admin_level:02d}"
+                            if result.admin_level >= 0
+                            else "HydroRIVERS Africa",
                             "iso3": "AF",
-                            "admin_level": result.admin_level if result.admin_level >= 0 else None,
+                            "admin_level": result.admin_level
+                            if result.admin_level >= 0
+                            else None,
                             "feature_count": feat_count,
                             "properties": meta.get("columns", []),
-                            "geom_column": "geom", "srid": 4326,
+                            "geom_column": "geom",
+                            "srid": 4326,
                             "source_url": result.url,
                             "source_format": "shp",
                             "file_size": result.size,
@@ -193,7 +215,9 @@ class Command(BaseCommand):
         self.stdout.write("\n" + "=" * 60)
         self.stdout.write("  DONE — HydroSHEDS")
         self.stdout.write("=" * 60)
-        self.stdout.write(f"  Downloaded : {job.downloaded_files} files ({_fmt(job.bytes_downloaded)})")
+        self.stdout.write(
+            f"  Downloaded : {job.downloaded_files} files ({_fmt(job.bytes_downloaded)})"
+        )
         self.stdout.write(f"  Loaded     : {job.loaded_tables} tables")
         self.stdout.write(f"  Schema     : {schema}")
         self.stdout.write(f"  Duration   : {job.duration}")
@@ -204,7 +228,19 @@ class Command(BaseCommand):
         Clip a HydroSHEDS table to the combined IGAD+ admin0 boundary.
         Uses ST_Intersects against geodata_raw admin0 tables.
         """
-        igad_countries = ["dji", "eri", "eth", "ken", "som", "ssd", "sdn", "uga", "bdi", "rwa", "tza"]
+        igad_countries = [
+            "dji",
+            "eri",
+            "eth",
+            "ken",
+            "som",
+            "ssd",
+            "sdn",
+            "uga",
+            "bdi",
+            "rwa",
+            "tza",
+        ]
         raw_schema = scraper_settings.DB_SCHEMA_RAW
 
         try:
@@ -212,10 +248,13 @@ class Command(BaseCommand):
                 # Check if GADM admin0 tables exist
                 existing = []
                 for iso3 in igad_countries:
-                    cur.execute("""
+                    cur.execute(
+                        """
                         SELECT table_name FROM information_schema.tables
                         WHERE table_schema = %s AND table_name = %s
-                    """, [raw_schema, f"{iso3}_admin0"])
+                    """,
+                        [raw_schema, f"{iso3}_admin0"],
+                    )
                     if cur.fetchone():
                         existing.append(iso3)
 

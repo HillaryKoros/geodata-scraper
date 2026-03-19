@@ -9,6 +9,7 @@ class GeodataScraperConfig(AppConfig):
 
     def ready(self):
         from . import signals  # noqa: F401
+
         self._ensure_schemas()
 
     def _ensure_schemas(self):
@@ -17,7 +18,10 @@ class GeodataScraperConfig(AppConfig):
 
         try:
             with connection.cursor() as cur:
-                for schema in (scraper_settings.DB_SCHEMA_RAW, scraper_settings.DB_SCHEMA_CLEAN):
+                for schema in (
+                    scraper_settings.DB_SCHEMA_RAW,
+                    scraper_settings.DB_SCHEMA_CLEAN,
+                ):
                     cur.execute(
                         "SELECT schema_name FROM information_schema.schemata WHERE schema_name = %s",
                         [schema],

@@ -28,8 +28,12 @@ class Command(BaseCommand):
         parser.add_argument("--region", type=str, default="igad_plus")
         parser.add_argument("--countries", type=str, help="Comma-separated ISO3")
         parser.add_argument("--output", type=str, default="/data/parquet")
-        parser.add_argument("--level", type=int, help="Specific admin level (default: all)")
-        parser.add_argument("--simplify", type=float, default=0, help="Simplify tolerance (degrees)")
+        parser.add_argument(
+            "--level", type=int, help="Specific admin level (default: all)"
+        )
+        parser.add_argument(
+            "--simplify", type=float, default=0, help="Simplify tolerance (degrees)"
+        )
         parser.add_argument("--schema", type=str, help="PostGIS schema")
 
     def handle(self, *args, **options):
@@ -46,7 +50,9 @@ class Command(BaseCommand):
         simplify = options["simplify"]
 
         max_level = max(get_admin_levels(c) for c in countries)
-        levels = [options["level"]] if options["level"] is not None else range(max_level + 1)
+        levels = (
+            [options["level"]] if options["level"] is not None else range(max_level + 1)
+        )
 
         self.stdout.write("=" * 60)
         self.stdout.write("  Parquet Export — Merged Admin Boundaries")
@@ -69,10 +75,13 @@ class Command(BaseCommand):
                 table = f"{iso3.lower()}_admin{level}"
                 # Check table exists
                 with connection.cursor() as cur:
-                    cur.execute("""
+                    cur.execute(
+                        """
                         SELECT table_name FROM information_schema.tables
                         WHERE table_schema = %s AND table_name = %s
-                    """, [schema, table])
+                    """,
+                        [schema, table],
+                    )
                     if cur.fetchone():
                         geom = "geom"
                         if simplify > 0:

@@ -40,14 +40,16 @@ class APIScraper(BaseScraper):
         for ep in self.endpoints:
             name = ep.get("name", "api_data")
             dest = storage_dir / "api" / f"{name}.geojson"
-            tasks.append({
-                "url": ep["url"],
-                "dest": dest,
-                "iso3": ep.get("iso3", ""),
-                "admin_level": ep.get("admin_level", -1),
-                "format": "geojson",
-                "params": ep.get("params", {}),
-            })
+            tasks.append(
+                {
+                    "url": ep["url"],
+                    "dest": dest,
+                    "iso3": ep.get("iso3", ""),
+                    "admin_level": ep.get("admin_level", -1),
+                    "format": "geojson",
+                    "params": ep.get("params", {}),
+                }
+            )
 
         return tasks
 
@@ -59,9 +61,13 @@ class APIScraper(BaseScraper):
 
         if dest.exists() and dest.stat().st_size > 0:
             return ExtractResult(
-                url=url, local_path=dest, iso3=task["iso3"],
-                admin_level=task["admin_level"], format="geojson",
-                size=dest.stat().st_size, success=True,
+                url=url,
+                local_path=dest,
+                iso3=task["iso3"],
+                admin_level=task["admin_level"],
+                format="geojson",
+                size=dest.stat().st_size,
+                success=True,
             )
 
         from ..settings import scraper_settings
@@ -112,15 +118,24 @@ class APIScraper(BaseScraper):
             log.info(f"OK: {dest.name} ({len(all_features)} features, {size} bytes)")
 
             return ExtractResult(
-                url=url, local_path=dest, iso3=task["iso3"],
-                admin_level=task["admin_level"], format="geojson",
-                size=size, success=True,
+                url=url,
+                local_path=dest,
+                iso3=task["iso3"],
+                admin_level=task["admin_level"],
+                format="geojson",
+                size=size,
+                success=True,
             )
 
         except (httpx.HTTPError, json.JSONDecodeError, KeyError) as e:
             log.error(f"FAILED: {dest.name} — {e}")
             return ExtractResult(
-                url=url, local_path=dest, iso3=task["iso3"],
-                admin_level=task["admin_level"], format="geojson",
-                size=0, success=False, error=str(e),
+                url=url,
+                local_path=dest,
+                iso3=task["iso3"],
+                admin_level=task["admin_level"],
+                format="geojson",
+                size=0,
+                success=False,
+                error=str(e),
             )

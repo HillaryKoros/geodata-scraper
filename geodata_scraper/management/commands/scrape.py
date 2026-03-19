@@ -40,15 +40,34 @@ class Command(BaseCommand):
     help = "Run the geodata ELT pipeline: Extract → Load → Transform"
 
     def add_arguments(self, parser):
-        parser.add_argument("source", type=str, help="Scraper name: gadm, http, api, ftp")
-        parser.add_argument("--region", type=str, help="Region preset: igad, igad_plus, africa, etc.")
+        parser.add_argument(
+            "source", type=str, help="Scraper name: gadm, http, api, ftp"
+        )
+        parser.add_argument(
+            "--region", type=str, help="Region preset: igad, igad_plus, africa, etc."
+        )
         parser.add_argument("--countries", type=str, help="Comma-separated ISO3 codes")
-        parser.add_argument("--format", type=str, default="gpkg", help="Download format: gpkg, geojson, shp")
-        parser.add_argument("--schema", type=str, help="PostGIS schema (default from settings)")
-        parser.add_argument("--no-transform", action="store_true", help="Skip transform step")
-        parser.add_argument("--no-views", action="store_true", help="Skip unified view creation")
-        parser.add_argument("--dry-run", action="store_true", help="Show what would be done")
-        parser.add_argument("--clean", action="store_true", help="Delete temp files after loading")
+        parser.add_argument(
+            "--format",
+            type=str,
+            default="gpkg",
+            help="Download format: gpkg, geojson, shp",
+        )
+        parser.add_argument(
+            "--schema", type=str, help="PostGIS schema (default from settings)"
+        )
+        parser.add_argument(
+            "--no-transform", action="store_true", help="Skip transform step"
+        )
+        parser.add_argument(
+            "--no-views", action="store_true", help="Skip unified view creation"
+        )
+        parser.add_argument(
+            "--dry-run", action="store_true", help="Show what would be done"
+        )
+        parser.add_argument(
+            "--clean", action="store_true", help="Delete temp files after loading"
+        )
 
     def handle(self, *args, **options):
         source_name = options["source"]
@@ -87,14 +106,18 @@ class Command(BaseCommand):
         if options["dry_run"]:
             self.stdout.write("\n[DRY RUN] Would process:\n")
             for t in tasks:
-                level = f"admin{t['admin_level']}" if t["admin_level"] >= 0 else "all-levels"
+                level = (
+                    f"admin{t['admin_level']}"
+                    if t["admin_level"] >= 0
+                    else "all-levels"
+                )
                 self.stdout.write(f"  {t['iso3']} {level} → {t['dest']}")
             self.stdout.write(f"\nTotal: {len(tasks)} files")
             return
 
         # Create or get DataSource
         data_source, _ = DataSource.objects.get_or_create(
-            name=f"GADM v4.1" if source_name == "gadm" else source_name,
+            name="GADM v4.1" if source_name == "gadm" else source_name,
             defaults={
                 "source_type": source_name,
                 "protocol": "https",
@@ -126,8 +149,12 @@ class Command(BaseCommand):
         job.save()
 
         for r in sorted(ok, key=lambda x: x.iso3):
-            self.stdout.write(f"  OK  {r.iso3:3s}  {r.local_path.name:35s}  {_fmt(r.size)}")
-        self.stdout.write(f"\n  Total: {len(ok)}/{len(results)} files ({_fmt(total_bytes)})")
+            self.stdout.write(
+                f"  OK  {r.iso3:3s}  {r.local_path.name:35s}  {_fmt(r.size)}"
+            )
+        self.stdout.write(
+            f"\n  Total: {len(ok)}/{len(results)} files ({_fmt(total_bytes)})"
+        )
         if failed:
             for f in failed:
                 self.stderr.write(f"  FAILED: {f.url} — {f.error}")
@@ -137,14 +164,18 @@ class Command(BaseCommand):
         loaded_count = 0
 
         for result in sorted(ok, key=lambda x: x.iso3):
-            self.stdout.write(f"\n  ▶ {result.iso3} — loading {result.local_path.name}...")
+            self.stdout.write(
+                f"\n  ▶ {result.iso3} — loading {result.local_path.name}..."
+            )
             try:
                 if source_name == "gadm" and result.format == "gpkg":
                     metas = load_gadm_gpkg(result.local_path, result.iso3, schema)
                 else:
                     table_name = f"{result.iso3.lower()}_admin{result.admin_level}"
                     meta = load_to_postgis(
-                        result.local_path, schema, table_name,
+                        result.local_path,
+                        schema,
+                        table_name,
                     )
                     meta["iso3"] = result.iso3
                     meta["admin_level"] = result.admin_level
@@ -172,7 +203,7 @@ class Command(BaseCommand):
                         )[0]
                         loaded_count += 1
                         layer_ingested.send(sender=layer.__class__, instance=layer)
-                        lvl = meta.get('admin_level', '?')
+                        lvl = meta.get("admin_level", "?")
                         self.stdout.write(
                             f"    admin{lvl}: {meta['schema']}.{meta['table']} "
                             f"— {meta.get('feature_count', 0)} features"
@@ -204,7 +235,9 @@ class Command(BaseCommand):
                         scraper_settings.DB_SCHEMA_CLEAN,
                         countries,
                     )
-                    self.stdout.write(f"  Unified views created in {scraper_settings.DB_SCHEMA_CLEAN}")
+                    self.stdout.write(
+                        f"  Unified views created in {scraper_settings.DB_SCHEMA_CLEAN}"
+                    )
                 except Exception as e:
                     self.stderr.write(f"  VIEW ERROR: {e}")
         else:
@@ -213,6 +246,7 @@ class Command(BaseCommand):
         # ── CLEANUP ──────────────────────────────────────────────
         if options["clean"]:
             import shutil
+
             gadm_dir = storage / "gadm"
             if gadm_dir.exists():
                 shutil.rmtree(gadm_dir)
@@ -225,10 +259,14 @@ class Command(BaseCommand):
         self.stdout.write("\n" + "=" * 60)
         self.stdout.write("  DONE")
         self.stdout.write("=" * 60)
-        self.stdout.write(f"  Downloaded : {job.downloaded_files} files ({_fmt(job.bytes_downloaded)})")
+        self.stdout.write(
+            f"  Downloaded : {job.downloaded_files} files ({_fmt(job.bytes_downloaded)})"
+        )
         self.stdout.write(f"  Loaded     : {job.loaded_tables} tables")
         self.stdout.write(f"  Failed     : {job.failed_files}")
-        self.stdout.write(f"  Schema     : {schema} (raw), {scraper_settings.DB_SCHEMA_CLEAN} (clean)")
+        self.stdout.write(
+            f"  Schema     : {schema} (raw), {scraper_settings.DB_SCHEMA_CLEAN} (clean)"
+        )
         self.stdout.write(f"  Duration   : {job.duration}")
         self.stdout.write("=" * 60)
 

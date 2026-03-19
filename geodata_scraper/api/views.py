@@ -17,7 +17,11 @@ from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 
 from ..models import DataSource, ScrapeJob, IngestedLayer
-from .serializers import DataSourceSerializer, ScrapeJobSerializer, IngestedLayerSerializer
+from .serializers import (
+    DataSourceSerializer,
+    ScrapeJobSerializer,
+    IngestedLayerSerializer,
+)
 
 
 class DataSourceViewSet(viewsets.ReadOnlyModelViewSet):
@@ -48,10 +52,12 @@ def boundary_by_country(request, iso3):
     iso3 = iso3.upper()
     layers = IngestedLayer.objects.filter(iso3=iso3).order_by("admin_level")
     serializer = IngestedLayerSerializer(layers, many=True)
-    return Response({
-        "country": iso3,
-        "admin_levels": serializer.data,
-    })
+    return Response(
+        {
+            "country": iso3,
+            "admin_levels": serializer.data,
+        }
+    )
 
 
 @api_view(["GET"])
@@ -71,31 +77,27 @@ def boundary_geojson(request, iso3, level):
 @api_view(["GET"])
 def countries_list(request):
     """List all countries with ingested boundary data."""
-    countries = (
-        IngestedLayer.objects
-        .values("iso3")
-        .distinct()
-        .order_by("iso3")
-    )
+    countries = IngestedLayer.objects.values("iso3").distinct().order_by("iso3")
     result = []
     for c in countries:
         iso3 = c["iso3"]
         levels = list(
-            IngestedLayer.objects
-            .filter(iso3=iso3)
+            IngestedLayer.objects.filter(iso3=iso3)
             .values_list("admin_level", flat=True)
             .order_by("admin_level")
         )
         total_features = sum(
-            IngestedLayer.objects
-            .filter(iso3=iso3)
-            .values_list("feature_count", flat=True)
+            IngestedLayer.objects.filter(iso3=iso3).values_list(
+                "feature_count", flat=True
+            )
         )
-        result.append({
-            "iso3": iso3,
-            "admin_levels": levels,
-            "total_features": total_features,
-        })
+        result.append(
+            {
+                "iso3": iso3,
+                "admin_levels": levels,
+                "total_features": total_features,
+            }
+        )
 
     return Response({"countries": result, "count": len(result)})
 
@@ -131,8 +133,10 @@ def _layer_to_geojson(layer, request):
         limit_sql = f"LIMIT {int(limit)}"
 
     # Exclude geometry columns from properties
-    prop_cols = [c for c in layer.properties if c not in ("geom", "ogc_fid", layer.geom_column)]
-    props_sql = ", ".join(f'"{c}"' for c in prop_cols) if prop_cols else "'{}'"
+    prop_cols = [
+        c for c in layer.properties if c not in ("geom", "ogc_fid", layer.geom_column)
+    ]
+    props_obj = ", ".join("'%s', \"%s\"" % (c, c) for c in prop_cols)
 
     sql = f"""
         SELECT json_build_object(
@@ -141,9 +145,7 @@ def _layer_to_geojson(layer, request):
                 json_build_object(
                     'type', 'Feature',
                     'geometry', ST_AsGeoJSON({geom_expr})::json,
-                    'properties', json_build_object({
-                        ', '.join(f"'{c}', \"{c}\"" for c in prop_cols)
-                    })
+                    'properties', json_build_object({props_obj})
                 )
             ), '[]'::json)
         )

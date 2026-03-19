@@ -37,14 +37,16 @@ class FTPScraper(BaseScraper):
             filename = rpath.split("/")[-1]
             dest = storage_dir / "ftp" / self.host / filename
             fmt = Path(filename).suffix.lstrip(".")
-            tasks.append({
-                "url": f"ftp://{self.host}{rpath}",
-                "dest": dest,
-                "remote_path": rpath,
-                "iso3": "",
-                "admin_level": -1,
-                "format": fmt,
-            })
+            tasks.append(
+                {
+                    "url": f"ftp://{self.host}{rpath}",
+                    "dest": dest,
+                    "remote_path": rpath,
+                    "iso3": "",
+                    "admin_level": -1,
+                    "format": fmt,
+                }
+            )
 
         return tasks
 
@@ -55,9 +57,13 @@ class FTPScraper(BaseScraper):
 
         if dest.exists() and dest.stat().st_size > 0:
             return ExtractResult(
-                url=task["url"], local_path=dest, iso3="",
-                admin_level=-1, format=task["format"],
-                size=dest.stat().st_size, success=True,
+                url=task["url"],
+                local_path=dest,
+                iso3="",
+                admin_level=-1,
+                format=task["format"],
+                size=dest.stat().st_size,
+                success=True,
             )
 
         try:
@@ -65,7 +71,7 @@ class FTPScraper(BaseScraper):
             ftp.connect(self.host, self.port)
             ftp.login(self.username, self.password)
 
-            size = ftp.size(rpath) or 0
+            _size = ftp.size(rpath) or 0  # noqa: F841
             tmp = dest.with_suffix(dest.suffix + ".part")
 
             with open(tmp, "wb") as f:
@@ -76,15 +82,24 @@ class FTPScraper(BaseScraper):
 
             log.info(f"OK: {dest.name} ({dest.stat().st_size} bytes)")
             return ExtractResult(
-                url=task["url"], local_path=dest, iso3="",
-                admin_level=-1, format=task["format"],
-                size=dest.stat().st_size, success=True,
+                url=task["url"],
+                local_path=dest,
+                iso3="",
+                admin_level=-1,
+                format=task["format"],
+                size=dest.stat().st_size,
+                success=True,
             )
 
         except (ftplib.all_errors, OSError) as e:
             log.error(f"FAILED: {dest.name} — {e}")
             return ExtractResult(
-                url=task["url"], local_path=dest, iso3="",
-                admin_level=-1, format=task["format"],
-                size=0, success=False, error=str(e),
+                url=task["url"],
+                local_path=dest,
+                iso3="",
+                admin_level=-1,
+                format=task["format"],
+                size=0,
+                success=False,
+                error=str(e),
             )

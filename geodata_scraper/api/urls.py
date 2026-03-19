@@ -11,6 +11,14 @@ router.register("layers", views.IngestedLayerViewSet, basename="ingestedlayer")
 urlpatterns = [
     path("", include(router.urls)),
     path("countries/", views.countries_list, name="geodata-countries"),
-    path("boundaries/<str:iso3>/", views.boundary_by_country, name="geodata-boundary-country"),
-    path("boundaries/<str:iso3>/<int:level>/", views.boundary_geojson, name="geodata-boundary-geojson"),
+    path(
+        "boundaries/<str:iso3>/",
+        views.boundary_by_country,
+        name="geodata-boundary-country",
+    ),
+    path(
+        "boundaries/<str:iso3>/<int:level>/",
+        views.boundary_geojson,
+        name="geodata-boundary-geojson",
+    ),
 ]

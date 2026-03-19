@@ -6,7 +6,6 @@ GeoPackage files with multiple layers (GADM) are split into
 separate tables per admin level.
 """
 
-import json
 import logging
 import subprocess
 from pathlib import Path
@@ -56,7 +55,8 @@ def _list_gpkg_layers(gpkg_path: Path) -> list[str]:
     """List layer names inside a GeoPackage."""
     result = subprocess.run(
         ["ogrinfo", "-so", "-q", str(gpkg_path)],
-        capture_output=True, text=True,
+        capture_output=True,
+        text=True,
     )
     layers = []
     for line in result.stdout.strip().splitlines():
@@ -83,11 +83,14 @@ def _get_table_columns(schema: str, table: str) -> list[str]:
     """Get column names for a PostGIS table."""
     try:
         with connection.cursor() as cur:
-            cur.execute("""
+            cur.execute(
+                """
                 SELECT column_name FROM information_schema.columns
                 WHERE table_schema = %s AND table_name = %s
                 ORDER BY ordinal_position
-            """, [schema, table])
+            """,
+                [schema, table],
+            )
             return [row[0] for row in cur.fetchall()]
     except Exception:
         return []
@@ -127,16 +130,25 @@ def load_to_postgis(
         cur.execute(f'CREATE SCHEMA IF NOT EXISTS "{schema}"')
 
     args = [
-        "-f", "PostgreSQL",
+        "-f",
+        "PostgreSQL",
         pg_conn,
         str(file_path),
-        "-nln", f"{schema}.{table_name}",
-        "-t_srs", f"EPSG:{srid}",
-        "-lco", "GEOMETRY_NAME=geom",
-        "-lco", f"SCHEMA={schema}",
-        "-lco", "FID=ogc_fid",
-        "-lco", "SPATIAL_INDEX=YES",
-        "--config", "OGR_TRUNCATE", "NO",
+        "-nln",
+        f"{schema}.{table_name}",
+        "-t_srs",
+        f"EPSG:{srid}",
+        "-lco",
+        "GEOMETRY_NAME=geom",
+        "-lco",
+        f"SCHEMA={schema}",
+        "-lco",
+        "FID=ogc_fid",
+        "-lco",
+        "SPATIAL_INDEX=YES",
+        "--config",
+        "OGR_TRUNCATE",
+        "NO",
     ]
 
     if overwrite:
@@ -199,13 +211,15 @@ def load_gadm_gpkg(
 
         except Exception as e:
             log.error(f"Failed to load {layer_name} → {schema}.{table_name}: {e}")
-            results.append({
-                "schema": schema,
-                "table": table_name,
-                "iso3": iso3.upper(),
-                "admin_level": admin_level,
-                "error": str(e),
-            })
+            results.append(
+                {
+                    "schema": schema,
+                    "table": table_name,
+                    "iso3": iso3.upper(),
+                    "admin_level": admin_level,
+                    "error": str(e),
+                }
+            )
 
     return results
 
@@ -231,6 +245,7 @@ def _parse_admin_level(layer_name: str) -> int:
     """Extract admin level number from GADM layer name."""
     # Patterns: "ADM_ADM_0", "gadm41_KEN_0", "admin_0", etc.
     import re
+
     match = re.search(r"(\d+)$", layer_name)
     if match:
         return int(match.group(1))

@@ -20,6 +20,8 @@ class Command(BaseCommand):
 
         self.stdout.write("\n=== Region Presets ===\n")
         for name, codes in REGIONS.items():
-            self.stdout.write(f"  {name:12s} — {len(codes)} countries: {', '.join(codes[:5])}{'...' if len(codes) > 5 else ''}")
+            self.stdout.write(
+                f"  {name:12s} — {len(codes)} countries: {', '.join(codes[:5])}{'...' if len(codes) > 5 else ''}"
+            )
 
         self.stdout.write("")

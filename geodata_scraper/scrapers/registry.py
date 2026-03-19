@@ -16,7 +16,9 @@ def register(scraper_class: type[BaseScraper]):
 def get_scraper(name: str, **kwargs) -> BaseScraper:
     """Get a scraper instance by name."""
     if name not in _REGISTRY:
-        raise ValueError(f"Unknown scraper: {name}. Available: {list(_REGISTRY.keys())}")
+        raise ValueError(
+            f"Unknown scraper: {name}. Available: {list(_REGISTRY.keys())}"
+        )
     return _REGISTRY[name](**kwargs)
 
 
@@ -27,6 +29,7 @@ def list_scrapers() -> dict[str, str]:
 
 class ScraperRegistry:
     """Namespace for registry functions."""
+
     register = staticmethod(register)
     get = staticmethod(get_scraper)
     list = staticmethod(list_scrapers)
