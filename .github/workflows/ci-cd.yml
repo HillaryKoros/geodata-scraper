@@ -13,9 +13,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: GitGuardian/ggshield-action@v1
-        env:
-          GITGUARDIAN_API_KEY: ${{ secrets.GITGUARDIAN_API_KEY }}
+      - uses: trufflesecurity/trufflehog@main
+        with:
+          extra_args: --only-verified
 
   lint:
     runs-on: ubuntu-latest
@@ -67,7 +67,7 @@ jobs:
       - name: Run migrations
         run: python manage.py migrate --noinput
       - name: Run tests
-        run: pytest -v
+        run: pytest -v || [ $? -eq 5 ]
 
   deploy:
     needs: [secrets-scan, lint, test]

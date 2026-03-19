@@ -10,8 +10,6 @@ Endpoints:
     /api/geodata/boundaries/{iso3}/{level}/ — specific admin level GeoJSON
 """
 
-import json
-
 from django.db import connection
 from django.http import JsonResponse
 from rest_framework import viewsets, status
