@@ -27,7 +27,6 @@ RUN pip install --no-cache-dir \
     fiona>=1.9 \
     wagtail>=6.0 \
     wagtail-modeladmin>=2.0 \
-    wagtailfontawesomesvg \
     gunicorn
 
 # Copy app

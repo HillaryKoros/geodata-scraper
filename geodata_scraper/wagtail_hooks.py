@@ -5,7 +5,6 @@ Follows the pattern from eafw_cms geomanager — uses wagtail_modeladmin
 for non-Page models with custom display, filtering, and grouping.
 """
 
-from wagtail import hooks
 from wagtail_modeladmin.options import ModelAdmin, ModelAdminGroup, modeladmin_register
 
 from .models import DataSource, ScrapeJob, IngestedLayer
@@ -14,7 +13,7 @@ from .models import DataSource, ScrapeJob, IngestedLayer
 class DataSourceAdmin(ModelAdmin):
     model = DataSource
     menu_label = "Data Sources"
-    menu_icon = "database"
+    menu_icon = "doc-full-inverse"
     menu_order = 100
     list_display = ["name", "source_type", "protocol", "is_active", "updated_at"]
     list_filter = ["source_type", "protocol", "is_active"]
@@ -49,7 +48,7 @@ class ScrapeJobAdmin(ModelAdmin):
 class IngestedLayerAdmin(ModelAdmin):
     model = IngestedLayer
     menu_label = "Layers"
-    menu_icon = "layer-group"
+    menu_icon = "list-ul"
     menu_order = 300
     list_display = [
         "name",
@@ -69,19 +68,9 @@ class IngestedLayerAdmin(ModelAdmin):
 
 class GeodataAdminGroup(ModelAdminGroup):
     menu_label = "Geodata"
-    menu_icon = "globe"
+    menu_icon = "site"
     menu_order = 200
     items = (DataSourceAdmin, ScrapeJobAdmin, IngestedLayerAdmin)
 
 
 modeladmin_register(GeodataAdminGroup)
-
-
-@hooks.register("register_icons")
-def register_icons(icons):
-    return icons + [
-        "wagtailfontawesomesvg/solid/database.svg",
-        "wagtailfontawesomesvg/solid/layer-group.svg",
-        "wagtailfontawesomesvg/solid/globe.svg",
-        "wagtailfontawesomesvg/solid/download.svg",
-    ]

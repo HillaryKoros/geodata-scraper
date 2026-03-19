@@ -38,7 +38,6 @@ INSTALLED_APPS = [
     "rest_framework_gis",
     # Extensions
     "wagtail_modeladmin",
-    "wagtailfontawesomesvg",
     # App
     "geodata_scraper",
 ]
