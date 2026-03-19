@@ -25,6 +25,9 @@ RUN pip install --no-cache-dir \
     geopandas>=0.14 \
     shapely>=2.0 \
     fiona>=1.9 \
+    wagtail>=6.0 \
+    wagtail-modeladmin>=2.0 \
+    wagtailfontawesomesvg \
     gunicorn
 
 # Copy app
