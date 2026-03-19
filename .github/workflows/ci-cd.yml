@@ -1,0 +1,78 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install ruff
+      - run: ruff check .
+      - run: ruff format --check .
+
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_DB: geodata_test
+          POSTGRES_USER: geodata
+          POSTGRES_PASSWORD: geodata
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U geodata"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DB_NAME: geodata_test
+      DB_USER: geodata
+      DB_PASSWORD: geodata
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DJANGO_SETTINGS_MODULE: config.settings
+      SECRET_KEY: test-secret-key
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gdal-bin libgdal-dev libpq-dev
+      - name: Install Python dependencies
+        run: |
+          pip install -e ".[dev]"
+      - name: Run migrations
+        run: python manage.py migrate --noinput
+      - name: Run tests
+        run: pytest -v
+
+  deploy:
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            cd ~/geodata-scraper
+            git pull origin main
+            docker compose build --no-cache
+            docker compose up -d
+            docker compose ps
