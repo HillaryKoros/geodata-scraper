@@ -7,6 +7,16 @@ on:
     branches: [main]
 
 jobs:
+  secrets-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: GitGuardian/ggshield-action@v1
+        env:
+          GITGUARDIAN_API_KEY: ${{ secrets.GITGUARDIAN_API_KEY }}
+
   lint:
     runs-on: ubuntu-latest
     steps:
@@ -60,7 +70,7 @@ jobs:
         run: pytest -v
 
   deploy:
-    needs: [lint, test]
+    needs: [secrets-scan, lint, test]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
