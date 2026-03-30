@@ -29,6 +29,7 @@ services:
       DB_HOST: db
       DB_PORT: 5432
       DJANGO_SETTINGS_MODULE: config.settings
+      PYTHONPATH: /app/api
     ports:
       - "8000:8000"
     volumes:

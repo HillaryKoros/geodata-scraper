@@ -16,7 +16,7 @@ done
 echo "PostGIS ready."
 
 echo "Running migrations..."
-python manage.py migrate --noinput
+python api/manage.py migrate --noinput
 
 echo "Starting $@"
 exec "$@"
