@@ -1,0 +1,50 @@
+{
+  "title": "spatial-db ETL",
+  "uid": "spatial-db-etl",
+  "editable": true,
+  "panels": [
+    {
+      "title": "Last ETL Run",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "PBFA97CFB590B2093"},
+      "targets": [{"expr": "etl_last_run_timestamp", "legendFormat": "timestamp"}],
+      "fieldConfig": {"defaults": {"unit": "dateTimeFromNow"}}
+    },
+    {
+      "title": "Total Duration",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "PBFA97CFB590B2093"},
+      "targets": [{"expr": "etl_total_duration_seconds", "legendFormat": "duration"}],
+      "fieldConfig": {"defaults": {"unit": "s"}}
+    },
+    {
+      "title": "Steps OK / Failed",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "PBFA97CFB590B2093"},
+      "targets": [
+        {"expr": "etl_steps_ok", "legendFormat": "OK"},
+        {"expr": "etl_steps_failed", "legendFormat": "Failed"}
+      ]
+    },
+    {
+      "title": "Step Duration (seconds)",
+      "type": "bargauge",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+      "datasource": {"type": "prometheus", "uid": "PBFA97CFB590B2093"},
+      "targets": [{"expr": "etl_step_duration_seconds", "legendFormat": "{{step}}"}],
+      "fieldConfig": {"defaults": {"unit": "s"}}
+    },
+    {
+      "title": "Step Status (1=OK, 0=Fail)",
+      "type": "table",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+      "datasource": {"type": "prometheus", "uid": "PBFA97CFB590B2093"},
+      "targets": [{"expr": "etl_step_status", "legendFormat": "{{step}}", "format": "table", "instant": true}]
+    }
+  ],
+  "time": {"from": "now-24h", "to": "now"},
+  "refresh": "30s"
+}

@@ -1,0 +1,94 @@
+services:
+  db:
+    image: ghcr.io/stac-utils/pgstac:v0.9.5
+    environment:
+      POSTGRES_DB: geodata
+      POSTGRES_USER: geodata
+      POSTGRES_PASSWORD: geodata
+      PGUSER: geodata
+      PGDATABASE: geodata
+    ports:
+      - "${DB_PORT:-5433}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U geodata"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  api:
+    build: .
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      DB_NAME: geodata
+      DB_USER: geodata
+      DB_PASSWORD: geodata
+      DB_HOST: db
+      DB_PORT: 5432
+      DJANGO_SETTINGS_MODULE: config.settings
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app:z
+      - app_data:/data
+    command: >
+      bash -c "
+        cd api &&
+        python manage.py migrate --noinput &&
+        python manage.py collectstatic --noinput 2>/dev/null;
+        gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 2
+      "
+    restart: unless-stopped
+
+  etl:
+    build: .
+    depends_on:
+      db: { condition: service_healthy }
+    env_file: .env
+    volumes:
+      - .:/app:z
+      - app_data:/data
+      - ./logs:/app/logs
+    command: ["python", "-m", "etl.cli"]
+    profiles: [etl]
+
+  pushgateway:
+    image: prom/pushgateway:latest
+    ports: ["9091:9091"]
+    profiles: [monitoring]
+
+  prometheus:
+    image: prom/prometheus:latest
+    expose: ["9090"]
+    volumes:
+      - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    profiles: [monitoring]
+
+  grafana:
+    image: grafana/grafana:latest
+    expose: ["3000"]
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: geodata
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+    profiles: [monitoring]
+
+  nginx:
+    image: nginx:alpine
+    ports: ["8090:80"]
+    volumes:
+      - ./docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on: [grafana, prometheus, pushgateway]
+    profiles: [monitoring]
+
+volumes:
+  pgdata:
+  app_data:
+  prometheus_data:
+  grafana_data:

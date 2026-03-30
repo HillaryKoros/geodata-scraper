@@ -1,0 +1,159 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  secrets-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: trufflesecurity/trufflehog@main
+        with:
+          extra_args: --only-verified
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install ruff
+      - run: ruff check .
+      - run: ruff format --check .
+
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_DB: geodata_test
+          POSTGRES_USER: geodata
+          POSTGRES_PASSWORD: geodata
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U geodata"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DB_NAME: geodata_test
+      DB_USER: geodata
+      DB_PASSWORD: geodata
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DJANGO_SETTINGS_MODULE: config.settings
+      SECRET_KEY: test-secret-key
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gdal-bin libgdal-dev libpq-dev
+      - name: Install Python dependencies
+        run: |
+          pip install -e ".[dev]"
+      - name: Run migrations
+        run: python manage.py migrate --noinput
+      - name: Run tests
+        run: pytest -v || [ $? -eq 5 ]
+
+  build:
+    needs: [secrets-scan, lint, test]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    outputs:
+      image_changed: ${{ steps.changes.outputs.image }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Check for image-affecting changes
+        id: changes
+        run: |
+          if git diff --name-only HEAD~1 HEAD | grep -qE '(Dockerfile|pyproject.toml|requirements|docker-compose)'; then
+            echo "image=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "image=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Set up Docker Buildx
+        if: steps.changes.outputs.image == 'true'
+        uses: docker/setup-buildx-action@v3
+      - name: Login to GitHub Container Registry
+        if: steps.changes.outputs.image == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push image
+        if: steps.changes.outputs.image == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    needs: [build]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            cd ~/geodata-scraper
+
+            # Backup database before deploy
+            echo "=== Backing up database ==="
+            mkdir -p ~/backups
+            BACKUP_FILE=~/backups/geodata_$(date +%Y%m%d_%H%M%S).sql.gz
+            docker compose exec -T db pg_dumpall -U geodata | gzip > "$BACKUP_FILE"
+            echo "Backup saved: $BACKUP_FILE"
+            # Keep only last 5 backups
+            ls -t ~/backups/geodata_*.sql.gz | tail -n +6 | xargs rm -f 2>/dev/null || true
+
+            git pull origin main
+
+            # Check if image was rebuilt
+            IMAGE_CHANGED="${{ needs.build.outputs.image_changed }}"
+
+            if [ "$IMAGE_CHANGED" = "true" ]; then
+              echo "=== Image changed, pulling and rebuilding ==="
+              docker compose pull 2>/dev/null || true
+              docker compose build
+              docker compose up -d --force-recreate
+            else
+              echo "=== Code-only change, restarting containers ==="
+              docker compose up -d
+            fi
+
+            # Always run migrations
+            docker compose exec -T api python manage.py migrate --noinput
+            docker compose exec -T api python manage.py collectstatic --noinput 2>/dev/null || true
+            docker compose ps
+
+            # Sync notebooks to JupyterLab
+            echo "=== Syncing notebooks ==="
+            mkdir -p /home/jupyter/notebooks/geodata-scraper
+            cp -r notebooks/* /home/jupyter/notebooks/geodata-scraper/ 2>/dev/null || true
+            chown -R jupyter:jupyter /home/jupyter/notebooks/geodata-scraper

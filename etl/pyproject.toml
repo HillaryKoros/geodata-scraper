@@ -1,0 +1,37 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "geodata-etl"
+version = "0.1.0"
+description = "Standalone ETL package for geodata pipelines"
+requires-python = ">=3.11"
+dependencies = [
+    "click",
+    "httpx",
+    "geopandas",
+    "shapely",
+    "fiona",
+    "rasterio",
+    "rioxarray",
+    "xarray",
+    "earthengine-api",
+    "duckdb",
+    "psycopg2-binary",
+    "sqlalchemy",
+    "geoalchemy2",
+    "prometheus-client",
+    "pyarrow",
+]
+
+[project.optional-dependencies]
+gridded = [
+    "zarr",
+    "netcdf4",
+    "numcodecs",
+    "dask",
+]
+
+[project.scripts]
+geodata-etl = "etl.cli:main"
