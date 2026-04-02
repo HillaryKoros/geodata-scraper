@@ -47,5 +47,12 @@ gridded = [
     "numcodecs",
     "dask[complete]",
 ]
+ibf = [
+    "cdsapi>=0.7",
+    "rasterstats>=0.19",
+]
 dev = ["pytest", "pytest-django", "ruff"]
 scripts = ["pyarrow", "sqlalchemy", "geoalchemy2", "psycopg2-binary"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["api", "etl"]

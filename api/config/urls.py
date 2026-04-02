@@ -10,6 +10,7 @@ urlpatterns = [
     path("cms_admin/", include(wagtailadmin_urls)),
     path("documents/", include(wagtaildocs_urls)),
     path("", include("geodata.urls")),
+    path("", include("ibf.urls")),
     path("cms/", include(wagtail_urls)),
 ]
 

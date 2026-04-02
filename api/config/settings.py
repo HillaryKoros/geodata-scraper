@@ -7,6 +7,17 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# GDAL/GEOS from rasterio bundle (for environments without system GDAL)
+_rasterio_libs = BASE_DIR.parent / ".venv/lib/python3.12/site-packages/rasterio.libs"
+if _rasterio_libs.exists():
+    import glob as _glob
+    _gdal = _glob.glob(str(_rasterio_libs / "libgdal*.so*"))
+    _geos = _glob.glob(str(_rasterio_libs / "libgeos_c*.so*"))
+    if _gdal and not os.environ.get("GDAL_LIBRARY_PATH"):
+        os.environ["GDAL_LIBRARY_PATH"] = _gdal[0]
+    if _geos and not os.environ.get("GEOS_LIBRARY_PATH"):
+        os.environ["GEOS_LIBRARY_PATH"] = _geos[0]
+
 SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-change-in-production")
 DEBUG = os.environ.get("DEBUG", "1") == "1"
 ALLOWED_HOSTS = ["*"]
@@ -41,6 +52,7 @@ INSTALLED_APPS = [
     "wagtail_modeladmin",
     # App
     "geodata",
+    "ibf",
 ]
 
 MIDDLEWARE = [
@@ -74,16 +86,24 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.contrib.gis.db.backends.postgis",
-        "NAME": os.environ.get("DB_NAME", "geodata"),
-        "USER": os.environ.get("DB_USER", "geodata"),
-        "PASSWORD": os.environ.get("DB_PASSWORD", "geodata"),
-        "HOST": os.environ.get("DB_HOST", "localhost"),
-        "PORT": os.environ.get("DB_PORT", "5433"),
+if os.environ.get("USE_SQLITE"):
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": os.environ.get("DB_NAME", str(BASE_DIR / "db.sqlite3")),
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.contrib.gis.db.backends.postgis",
+            "NAME": os.environ.get("DB_NAME", "geodata"),
+            "USER": os.environ.get("DB_USER", "geodata"),
+            "PASSWORD": os.environ.get("DB_PASSWORD", "geodata"),
+            "HOST": os.environ.get("DB_HOST", "localhost"),
+            "PORT": os.environ.get("DB_PORT", "5433"),
+        }
+    }
 
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"

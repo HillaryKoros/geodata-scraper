@@ -1,0 +1,361 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IBF Dashboard — GHA Flood</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; display: flex; height: 100vh; background: #f5f5f5; }
+
+    /* Sidebar */
+    #sidebar {
+      width: 360px; background: #fff; border-right: 1px solid #ddd;
+      display: flex; flex-direction: column; overflow-y: auto;
+    }
+    #sidebar header {
+      padding: 16px; background: #1a237e; color: #fff;
+    }
+    #sidebar header h1 { font-size: 18px; font-weight: 600; }
+    #sidebar header p { font-size: 12px; opacity: 0.8; margin-top: 4px; }
+
+    .summary-cards {
+      display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; padding: 12px;
+    }
+    .card {
+      background: #f8f9fa; border-radius: 8px; padding: 10px; text-align: center;
+    }
+    .card .number { font-size: 22px; font-weight: 700; }
+    .card .label { font-size: 10px; color: #666; text-transform: uppercase; }
+    .card.alert-sev { background: #ffebee; }
+    .card.alert-sev .number { color: #c62828; }
+    .card.warning-sev { background: #fff3e0; }
+    .card.warning-sev .number { color: #e65100; }
+    .card.watch-sev { background: #fffde7; }
+    .card.watch-sev .number { color: #f57f17; }
+
+    .filter-bar {
+      padding: 8px 12px; border-bottom: 1px solid #eee;
+      display: flex; gap: 8px; align-items: center;
+    }
+    .filter-bar select, .filter-bar input {
+      padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px;
+    }
+
+    #alert-list { flex: 1; overflow-y: auto; padding: 4px 0; }
+    .alert-item {
+      padding: 10px 14px; border-bottom: 1px solid #f0f0f0; cursor: pointer;
+      display: flex; align-items: center; gap: 10px; transition: background 0.15s;
+    }
+    .alert-item:hover { background: #f5f5f5; }
+    .alert-item .badge {
+      width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+    }
+    .badge-alert { background: #c62828; }
+    .badge-warning { background: #e65100; }
+    .badge-watch { background: #f57f17; }
+    .alert-item .info { flex: 1; }
+    .alert-item .info .district { font-size: 13px; font-weight: 500; }
+    .alert-item .info .meta { font-size: 11px; color: #888; }
+    .alert-item .pop { font-size: 12px; font-weight: 600; color: #333; text-align: right; }
+
+    .sidebar-footer {
+      padding: 10px 12px; border-top: 1px solid #eee; font-size: 11px; color: #999;
+      display: flex; gap: 8px;
+    }
+    .sidebar-footer a { color: #1a237e; text-decoration: none; }
+
+    /* Map */
+    #map-container { flex: 1; position: relative; }
+    #map { width: 100%; height: 100%; }
+
+    /* Detail panel */
+    #detail-panel {
+      position: absolute; top: 10px; right: 10px; width: 320px;
+      background: #fff; border-radius: 8px; box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+      padding: 16px; display: none; z-index: 1000; max-height: 80vh; overflow-y: auto;
+    }
+    #detail-panel h3 { font-size: 15px; margin-bottom: 8px; }
+    #detail-panel .close-btn {
+      position: absolute; top: 8px; right: 12px; cursor: pointer;
+      font-size: 18px; color: #999; background: none; border: none;
+    }
+    #detail-panel table { width: 100%; font-size: 12px; border-collapse: collapse; }
+    #detail-panel table td { padding: 4px 0; }
+    #detail-panel table td:first-child { color: #666; }
+    #detail-panel table td:last-child { text-align: right; font-weight: 500; }
+    #detail-chart { margin-top: 12px; }
+
+    /* Legend */
+    .map-legend {
+      position: absolute; bottom: 20px; left: 10px; z-index: 1000;
+      background: #fff; padding: 10px 14px; border-radius: 6px;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.2); font-size: 11px;
+    }
+    .map-legend .item { display: flex; align-items: center; gap: 6px; margin: 3px 0; }
+    .map-legend .swatch { width: 14px; height: 14px; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <div id="sidebar">
+    <header>
+      <h1>IBF Flood Dashboard</h1>
+      <p>Greater Horn of Africa — 11 countries</p>
+    </header>
+
+    <div class="summary-cards">
+      <div class="card alert-sev">
+        <div class="number" id="count-alert">-</div>
+        <div class="label">Alert</div>
+      </div>
+      <div class="card warning-sev">
+        <div class="number" id="count-warning">-</div>
+        <div class="label">Warning</div>
+      </div>
+      <div class="card watch-sev">
+        <div class="number" id="count-watch">-</div>
+        <div class="label">Watch</div>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <select id="filter-country">
+        <option value="">All countries</option>
+      </select>
+      <select id="filter-severity">
+        <option value="">All severities</option>
+        <option value="alert">Alert</option>
+        <option value="warning">Warning</option>
+        <option value="watch">Watch</option>
+      </select>
+    </div>
+
+    <div id="alert-list"></div>
+
+    <div class="sidebar-footer">
+      <a href="/api/ibf/alerts/?format=json">API</a>
+      <a href="/api/ibf/alerts/active/geojson/">GeoJSON</a>
+      <span>|</span>
+      <span id="last-forecast">No forecast data</span>
+    </div>
+  </div>
+
+  <div id="map-container">
+    <div id="map"></div>
+    <div id="detail-panel">
+      <button class="close-btn" onclick="closeDetail()">&times;</button>
+      <h3 id="detail-title"></h3>
+      <table id="detail-table"></table>
+      <canvas id="detail-chart" height="120"></canvas>
+    </div>
+    <div class="map-legend">
+      <div style="font-weight:600; margin-bottom:4px;">Alert Severity</div>
+      <div class="item"><div class="swatch" style="background:#c62828"></div> Alert (RP &ge; 50)</div>
+      <div class="item"><div class="swatch" style="background:#e65100"></div> Warning (RP &ge; 20)</div>
+      <div class="item"><div class="swatch" style="background:#f57f17"></div> Watch (RP &ge; 10)</div>
+      <div class="item"><div class="swatch" style="background:#e0e0e0"></div> No active alert</div>
+    </div>
+  </div>
+
+<script>
+const SEVERITY_COLORS = { alert: '#c62828', warning: '#e65100', watch: '#f57f17' };
+const API_BASE = '/api/ibf';
+
+// Map
+const map = L.map('map').setView([5, 38], 5);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+  attribution: '&copy; OSM &amp; CARTO', maxZoom: 18,
+}).addTo(map);
+
+let alertLayer = null;
+let impactData = {};
+let allAlerts = [];
+let detailChart = null;
+
+// Load dashboard data
+async function loadDashboard() {
+  try {
+    const resp = await fetch(`${API_BASE}/dashboard/data/`);
+    const data = await resp.json();
+
+    allAlerts = data.alerts || [];
+    const summary = data.summary || {};
+
+    // Update summary cards
+    const bySev = summary.by_severity || {};
+    document.getElementById('count-alert').textContent = bySev.alert || 0;
+    document.getElementById('count-warning').textContent = bySev.warning || 0;
+    document.getElementById('count-watch').textContent = bySev.watch || 0;
+
+    // Update forecast info
+    if (data.latest_forecast && data.latest_forecast.date) {
+      document.getElementById('last-forecast').textContent =
+        `Forecast: ${data.latest_forecast.date}`;
+    }
+
+    // Populate country filter
+    const countries = [...new Set(allAlerts.map(a => a.country))].sort();
+    const sel = document.getElementById('filter-country');
+    countries.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c; opt.textContent = c;
+      sel.appendChild(opt);
+    });
+
+    renderAlertList(allAlerts);
+    loadAlertGeoJSON();
+  } catch (e) {
+    console.error('Dashboard load failed:', e);
+    document.getElementById('alert-list').innerHTML =
+      '<div style="padding:20px;color:#999;text-align:center;">No active alerts.<br>Run a forecast to generate alerts.</div>';
+  }
+}
+
+// Load GeoJSON for map
+async function loadAlertGeoJSON() {
+  try {
+    const resp = await fetch(`${API_BASE}/alerts/active/geojson/`);
+    const geojson = await resp.json();
+
+    if (alertLayer) map.removeLayer(alertLayer);
+
+    alertLayer = L.geoJSON(geojson, {
+      style: feature => {
+        const sev = feature.properties.severity;
+        return {
+          fillColor: SEVERITY_COLORS[sev] || '#e0e0e0',
+          color: '#333', weight: 1, fillOpacity: 0.6,
+        };
+      },
+      onEachFeature: (feature, layer) => {
+        layer.on('click', () => showDetail(feature.properties));
+      },
+    }).addTo(map);
+
+    if (alertLayer.getBounds().isValid()) {
+      map.fitBounds(alertLayer.getBounds(), { padding: [20, 20] });
+    }
+  } catch (e) {
+    console.log('No GeoJSON alerts available');
+  }
+
+  // Also load admin2 boundaries as base layer
+  try {
+    const resp = await fetch('/api/geodata/gha/admin/2/?simplify=0.01');
+    const admin2 = await resp.json();
+    L.geoJSON(admin2, {
+      style: { fillColor: '#e0e0e0', color: '#bbb', weight: 0.5, fillOpacity: 0.2 },
+    }).addTo(map);
+  } catch (e) {}
+}
+
+// Render alert list in sidebar
+function renderAlertList(alerts) {
+  const country = document.getElementById('filter-country').value;
+  const severity = document.getElementById('filter-severity').value;
+
+  let filtered = alerts;
+  if (country) filtered = filtered.filter(a => a.country === country);
+  if (severity) filtered = filtered.filter(a => a.severity === severity);
+
+  const list = document.getElementById('alert-list');
+  if (filtered.length === 0) {
+    list.innerHTML = '<div style="padding:20px;color:#999;text-align:center;">No alerts match filters</div>';
+    return;
+  }
+
+  list.innerHTML = filtered.map(a => `
+    <div class="alert-item" onclick="showDetailFromAlert('${a.gid_2}', '${a.id}')">
+      <div class="badge badge-${a.severity}"></div>
+      <div class="info">
+        <div class="district">${a.admin2}, ${a.admin1}</div>
+        <div class="meta">${a.country} &middot; RP${a.return_period} &middot; +${a.lead_time_days}d</div>
+      </div>
+      <div class="pop">${(a.pop_exposed / 1000).toFixed(0)}K</div>
+    </div>
+  `).join('');
+}
+
+// Show detail panel for a district
+async function showDetail(props) {
+  const panel = document.getElementById('detail-panel');
+  document.getElementById('detail-title').textContent =
+    `${props.admin2 || ''}, ${props.admin1 || ''}`;
+
+  const table = document.getElementById('detail-table');
+  table.innerHTML = `
+    <tr><td>Severity</td><td><span style="color:${SEVERITY_COLORS[props.severity]};font-weight:700;">${(props.severity || '').toUpperCase()}</span></td></tr>
+    <tr><td>Return Period</td><td>RP${props.return_period}</td></tr>
+    <tr><td>Lead Time</td><td>${props.lead_time_days} days</td></tr>
+    <tr><td>Pop Exposed</td><td>${(props.pop_exposed || 0).toLocaleString()}</td></tr>
+    <tr><td>% Pop Exposed</td><td>${props.pop_exposed_pct || 0}%</td></tr>
+    <tr><td>Flood Area</td><td>${props.flood_area_km2 || 0} km&sup2;</td></tr>
+  `;
+
+  // Load impact profile for this district
+  if (props.gid_2) {
+    try {
+      const resp = await fetch(`${API_BASE}/impacts/${props.gid_2}/`);
+      const data = await resp.json();
+      renderImpactChart(data.impacts || []);
+    } catch (e) {}
+  }
+
+  panel.style.display = 'block';
+}
+
+function showDetailFromAlert(gid2, alertId) {
+  const alert = allAlerts.find(a => a.id === alertId);
+  if (alert) showDetail(alert);
+}
+
+function closeDetail() {
+  document.getElementById('detail-panel').style.display = 'none';
+  if (detailChart) { detailChart.destroy(); detailChart = null; }
+}
+
+// Impact chart by RP
+function renderImpactChart(impacts) {
+  const canvas = document.getElementById('detail-chart');
+  if (detailChart) detailChart.destroy();
+
+  const labels = impacts.map(i => `RP${i.return_period}`);
+  const popData = impacts.map(i => i.pop_exposed);
+  const areaData = impacts.map(i => i.flood_area_km2);
+
+  detailChart = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Pop Exposed', data: popData, backgroundColor: '#ef5350', yAxisID: 'y' },
+        { label: 'Flood Area (km2)', data: areaData, backgroundColor: '#42a5f5', yAxisID: 'y1' },
+      ],
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } },
+      scales: {
+        y: { position: 'left', title: { display: true, text: 'Population', font: { size: 10 } } },
+        y1: { position: 'right', title: { display: true, text: 'km2', font: { size: 10 } }, grid: { drawOnChartArea: false } },
+      },
+    },
+  });
+}
+
+// Filters
+document.getElementById('filter-country').addEventListener('change', () => renderAlertList(allAlerts));
+document.getElementById('filter-severity').addEventListener('change', () => renderAlertList(allAlerts));
+
+// Init
+loadDashboard();
+
+// Auto-refresh every 15 minutes
+setInterval(loadDashboard, 15 * 60 * 1000);
+</script>
+</body>
+</html>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Alert — {{ alert.admin_unit.admin2_name }}</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+    .container { max-width: 900px; margin: 0 auto; }
+    .header { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+    .severity-badge {
+      padding: 6px 14px; border-radius: 4px; color: #fff;
+      font-weight: 700; font-size: 13px; text-transform: uppercase;
+    }
+    .severity-alert { background: #c62828; }
+    .severity-warning { background: #e65100; }
+    .severity-watch { background: #f57f17; }
+    h1 { font-size: 22px; }
+    .meta { color: #666; font-size: 13px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0; }
+    .panel { background: #fff; border-radius: 8px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+    .panel h3 { font-size: 14px; color: #666; margin-bottom: 10px; }
+    .stat { margin: 8px 0; }
+    .stat .value { font-size: 20px; font-weight: 700; }
+    .stat .label { font-size: 11px; color: #999; }
+    #minimap { height: 250px; border-radius: 8px; }
+    a { color: #1a237e; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="/ibf/">&larr; Back to Dashboard</a>
+
+    <div class="header">
+      <span class="severity-badge severity-{{ alert.severity }}">{{ alert.severity }}</span>
+      <div>
+        <h1>{{ alert.admin_unit.admin2_name }}, {{ alert.admin_unit.admin1_name }}</h1>
+        <div class="meta">{{ alert.admin_unit.country }} &middot; {{ alert.hazard_type.name }} &middot; Issued {{ alert.issued_at|date:"Y-m-d H:i" }} UTC</div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="panel">
+        <h3>Forecast</h3>
+        <div class="stat"><div class="value">RP{{ alert.return_period }}</div><div class="label">Return Period</div></div>
+        <div class="stat"><div class="value">+{{ alert.lead_time_days }} days</div><div class="label">Lead Time</div></div>
+        <div class="stat"><div class="value">{{ alert.discharge_m3s|floatformat:0 }} m&sup3;/s</div><div class="label">Discharge</div></div>
+        <div class="stat"><div class="value">{{ alert.probability|floatformat:0 }}%</div><div class="label">Ensemble Probability</div></div>
+      </div>
+
+      <div class="panel">
+        <h3>Impact</h3>
+        <div class="stat"><div class="value">{{ alert.pop_exposed|floatformat:0 }}</div><div class="label">People Exposed</div></div>
+        <div class="stat"><div class="value">{{ alert.pop_exposed_pct }}%</div><div class="label">% of District Population</div></div>
+        <div class="stat"><div class="value">{{ alert.flood_area_km2|floatformat:1 }} km&sup2;</div><div class="label">Flood Area</div></div>
+        <div class="stat"><div class="value">{{ alert.cropland_flooded_km2|floatformat:1 }} km&sup2;</div><div class="label">Cropland Flooded</div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Location</h3>
+      <div id="minimap"></div>
+    </div>
+
+    {% if alert.notes %}
+    <div class="panel" style="margin-top:16px;">
+      <h3>Notes</h3>
+      <p>{{ alert.notes }}</p>
+    </div>
+    {% endif %}
+  </div>
+
+<script>
+  const map = L.map('minimap').setView([{{ alert.admin_unit.geom.centroid.y|default:"5" }}, {{ alert.admin_unit.geom.centroid.x|default:"38" }}], 8);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OSM', maxZoom: 18
+  }).addTo(map);
+
+  {% if alert.admin_unit.geom %}
+  try {
+    const geojson = JSON.parse('{{ alert.admin_unit.geom.geojson|escapejs }}');
+    const layer = L.geoJSON(geojson, {
+      style: { fillColor: '{% if alert.severity == "alert" %}#c62828{% elif alert.severity == "warning" %}#e65100{% else %}#f57f17{% endif %}', color: '#333', weight: 2, fillOpacity: 0.4 }
+    }).addTo(map);
+    map.fitBounds(layer.getBounds(), { padding: [20, 20] });
+  } catch(e) {}
+  {% endif %}
+</script>
+</body>
+</html>

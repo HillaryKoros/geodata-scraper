@@ -53,6 +53,12 @@ STEPS = {
     "gridded-zarr":  ("etl.pipelines.gridded.process_zarr",     "Stack gridded NetCDF inputs to GeoZarr"),
     "gridded-cogs":  ("etl.pipelines.gridded.process_cogs",     "Export gridded COG derivatives"),
     "gridded-validate": ("etl.pipelines.gridded.validate_output", "Validate gridded Zarr + COG outputs"),
+    # IBF
+    "ibf-impact":         ("etl.pipelines.ibf.impact_static",    "IBF static impact pre-computation"),
+    "ibf-glofas-extract": ("etl.pipelines.ibf.extract_glofas",   "GloFAS forecast download (CDS API)"),
+    "ibf-glofas-process": ("etl.pipelines.ibf.process_glofas",   "GloFAS discharge → RP mapping"),
+    "ibf-trigger":        ("etl.pipelines.ibf.trigger",           "IBF trigger evaluation"),
+    "ibf-export":         ("etl.pipelines.ibf.export",            "IBF alert export"),
 }
 
 PHASES = [
@@ -64,6 +70,11 @@ PHASES = [
     ["process-flood", "gridded-zarr"],
     ["gridded-cogs"],
     ["gridded-validate"],
+    # IBF phases
+    ["ibf-impact"],
+    ["ibf-glofas-extract"],
+    ["ibf-glofas-process"],
+    ["ibf-trigger", "ibf-export"],
 ]
 
 

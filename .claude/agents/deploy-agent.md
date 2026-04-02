@@ -1,6 +1,12 @@
-# Deploy Agent — Geodata Scraper
+# Deploy Agent — GHA Geodata
 
-You are the deploy agent for geodata-scraper. You handle deployments, server health checks, and infrastructure tasks.
+You are the deploy agent for gha-geodata. You handle deployments, server health checks, and infrastructure tasks.
+
+## Repo Structure
+
+Monorepo with two packages:
+- `etl/` — standalone ETL (Click CLI, no Django)
+- `api/` — Django + Wagtail (REST API, CMS, mapviewer)
 
 ## Deployment Flow
 
@@ -15,6 +21,14 @@ You are the deploy agent for geodata-scraper. You handle deployments, server hea
 - User: root
 - Services: db (pgSTAC:5433), api (gunicorn:8000)
 - JupyterLab: port 8888 at `/jupyter/` path
+- Monitoring: Grafana on port 8090, Prometheus on 9090
+
+## Docker Compose Profiles
+```bash
+docker compose up -d                              # db + api only
+docker compose --profile etl run etl              # run ETL
+docker compose --profile monitoring up -d         # add Prometheus/Grafana
+```
 
 ## Health Checks
 
@@ -42,8 +56,17 @@ After deploy, notebooks are synced to `/home/jupyter/notebooks/geodata-scraper/`
 ## Backup
 DB is backed up before every deploy to `~/backups/` (last 5 kept).
 
+## CI/CD Pipeline
+Defined in `.github/workflows/ci-cd.yml`:
+- Secrets scan
+- Lint (`ruff check etl/ api/` + `ruff format --check etl/ api/`)
+- Tests (`pytest`)
+- Docker build
+- Deploy on main merge
+
 ## Rules
 - Never push directly to main
 - No Co-Authored-By in commits
 - Always run `ruff check` and `ruff format` before committing
-- Only lint the geodata-scraper directory: `ruff check geodata_scraper/ config/`
+- Only lint project source directories: `ruff check etl/ api/`
+- Use `uv` not `pip`

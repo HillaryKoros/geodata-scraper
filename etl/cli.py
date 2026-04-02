@@ -25,6 +25,8 @@ EXTRACTORS = {
     "population":  "etl.pipelines.population.extract",
     "gridded-manifest": "etl.pipelines.gridded.extract_manifest",
     "gridded-qa": "etl.pipelines.gridded.validate_inputs",
+    "ibf-impact": "etl.pipelines.ibf.impact_static",
+    "ibf-glofas-extract": "etl.pipelines.ibf.extract_glofas",
 }
 
 PROCESSORS = {
@@ -32,6 +34,9 @@ PROCESSORS = {
     "gridded-zarr": "etl.pipelines.gridded.process_zarr",
     "gridded-cogs": "etl.pipelines.gridded.process_cogs",
     "gridded-validate": "etl.pipelines.gridded.validate_output",
+    "ibf-glofas-process": "etl.pipelines.ibf.process_glofas",
+    "ibf-trigger": "etl.pipelines.ibf.trigger",
+    "ibf-export": "etl.pipelines.ibf.export",
 }
 
 

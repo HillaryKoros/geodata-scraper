@@ -54,6 +54,10 @@ GRIDDED_COG_VARIABLES = tuple(
 )
 GRIDDED_EXPECTED_VARIABLES = ("SM", "Discharge", "ET")
 
+# CDS API (GloFAS forecasts)
+CDS_API_URL = os.getenv("CDS_API_URL", "https://cds.climate.copernicus.eu/api")
+CDS_API_KEY = os.getenv("CDS_API_KEY", "")
+
 # IGAD member states (11 countries)
 IGAD_COUNTRIES = ["DJI", "ERI", "ETH", "KEN", "SOM", "SSD", "SDN", "UGA", "TZA", "RWA", "BDI"]
 

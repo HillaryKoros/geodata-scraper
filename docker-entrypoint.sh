@@ -15,8 +15,10 @@ psycopg2.connect(
 done
 echo "PostGIS ready."
 
+cd /app/api
+
 echo "Running migrations..."
-python api/manage.py migrate --noinput
+python manage.py migrate --noinput
 
 echo "Starting $@"
 exec "$@"
